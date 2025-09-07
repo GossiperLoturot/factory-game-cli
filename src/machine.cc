@@ -32,7 +32,7 @@ std::string InputM::get_name() { return "Input"; }
 
 std::vector<Anchor*> InputM::get_anchors() { return {&m_output}; }
 
-void InputM::draw(DrawManager* draw_manager) {
+void InputM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x + 2, m_point.y - 1, item_to_string(item));
   draw_manager->draw_label(m_point.x, m_point.y, "[[Input]]");
   draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
@@ -73,7 +73,7 @@ std::string OutputM::get_name() { return "Output"; }
 
 std::vector<Anchor*> OutputM::get_anchors() { return {&m_input}; }
 
-void OutputM::draw(DrawManager* draw_manager) {
+void OutputM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x + 2, m_point.y + 1, item_to_string(item));
   draw_manager->draw_label(m_point.x, m_point.y, "[[Output]]");
   draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
@@ -129,7 +129,7 @@ std::vector<Anchor*> ElectrolyzerM::get_anchors() {
   return {&m_input, &m_output0, &m_output1};
 }
 
-void ElectrolyzerM::draw(DrawManager* draw_manager) {
+void ElectrolyzerM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x, m_point.y, "[[Electrolyzer]]");
   draw_manager->draw_label(m_point.x + 7, m_point.y - 1, "I");
   draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O1");
@@ -199,7 +199,7 @@ std::string CutterM::get_name() { return "Cutter"; }
 
 std::vector<Anchor*> CutterM::get_anchors() { return {&m_input, &m_output}; }
 
-void CutterM::draw(DrawManager* draw_manager) {
+void CutterM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x, m_point.y, "[[Cutter]]");
   draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
   draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
@@ -271,7 +271,7 @@ std::string LaserM::get_name() { return "Laser"; }
 
 std::vector<Anchor*> LaserM::get_anchors() { return {&m_input, &m_output}; }
 
-void LaserM::draw(DrawManager* draw_manager) {
+void LaserM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x, m_point.y, "[[Laser]]");
   draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
   draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
@@ -339,7 +339,7 @@ std::vector<Anchor*> AssemblerM::get_anchors() {
   return {&m_input0, &m_input1, &m_input2, &m_output};
 }
 
-void AssemblerM::draw(DrawManager* draw_manager) {
+void AssemblerM::draw(DrawManagerBase* draw_manager) {
   draw_manager->draw_label(m_point.x, m_point.y, "[[Assembler]]");
   draw_manager->draw_label(m_point.x + 2, m_point.y - 1, "I1");
   draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I2");
@@ -428,7 +428,7 @@ std::shared_ptr<Machine> MachineManager::remove_machine(Point point) {
   return nullptr;
 }
 
-void MachineManager::draw(DrawManager* draw_manager) {
+void MachineManager::draw(DrawManagerBase* draw_manager) {
   for (size_t i = 0; i < m_machines.size(); ++i) {
     std::shared_ptr<Machine> machine = m_machines[i];
     machine->draw(draw_manager);

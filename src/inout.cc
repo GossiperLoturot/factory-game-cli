@@ -10,7 +10,7 @@ Input::~Input() = default;
 
 std::string Input::get_name() { return item_to_string(m_item); }
 
-void Input::draw(DrawManager* draw_manager) {
+void Input::draw(DrawManagerBase* draw_manager) {
   std::string name = get_name();
   draw_manager->draw_label(point.x, point.y, name);
   draw_manager->draw_label(point.x + (name.size() / 2), point.y + 1, "I");
@@ -31,7 +31,7 @@ InoutManager::InoutManager()
 
 InoutManager::~InoutManager() = default;
 
-void InoutManager::draw(DrawManager* draw_manager) {
+void InoutManager::draw(DrawManagerBase* draw_manager) {
   for (size_t i = 0; i < m_inputs.size(); ++i) {
     m_inputs[i]->draw(draw_manager);
   }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <windows.h>
-
 #include <string>
 
 #include "draw.h"
@@ -22,8 +20,8 @@ union ModeState {
   struct {
   } PlacePipe;
   struct {
-    SHORT x;
-    SHORT y;
+    int x;
+    int y;
     Anchor* anchor;
   } LinkPipe;
   struct {
@@ -36,18 +34,11 @@ union ModeState {
 
 class State {
  public:
-  State();
-  virtual ~State();
+  State() = default;
+  virtual ~State() = default;
 
   virtual std::string get_name() = 0;
-  virtual State* update(HANDLE stdin_handle, DrawManager* draw_manager) = 0;
-
- protected:
-  INPUT_RECORD* capture_input(HANDLE stdin_handle);
-
- private:
-  DWORD m_num_events;
-  INPUT_RECORD m_input_record;
+  virtual State* update(DrawManagerBase* draw_manager) = 0;
 };
 
 class TitleState : public State {
@@ -56,35 +47,33 @@ class TitleState : public State {
   ~TitleState() override;
 
   std::string get_name() override;
-  State* update(HANDLE stdin_handle, DrawManager* draw_manager) override;
+  State* update(DrawManagerBase* draw_manager) override;
 };
 
 class InGameState : public State {
  public:
-  explicit InGameState(int stage);
+  InGameState(int stage);
   ~InGameState() override;
 
   std::string get_name() override;
-  State* update(HANDLE stdin_handle, DrawManager* draw_manager) override;
+  State* update(DrawManagerBase* draw_manager) override;
 
  private:
   PipeManager m_pipe_manager;
   MachineManager m_machine_manager;
-
   Modes m_mode;
   ModeState m_mode_state;
   std::default_random_engine m_rng;
-
   ProductiveStats m_stats;
 };
 
 class ResultState : public State {
  public:
-  explicit ResultState(ProductiveStats m_game_score);
+  ResultState(ProductiveStats m_game_score);
   ~ResultState() override;
 
   std::string get_name() override;
-  State* update(HANDLE stdin_handle, DrawManager* draw_manager) override;
+  State* update(DrawManagerBase* draw_manager) override;
 
  private:
   ProductiveStats m_stats;

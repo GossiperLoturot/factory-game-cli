@@ -5,7 +5,6 @@
 namespace factory_game {
 
 struct Point {
- public:
   int x;
   int y;
 

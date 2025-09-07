@@ -18,7 +18,7 @@ class Input {
   virtual ~Input();
 
   virtual std::string get_name() = 0;
-  virtual void draw(DrawManager* draw_manager) = 0;
+  virtual void draw(DrawManagerBase* draw_manager) = 0;
   virtual void create_anchor(Anchor** buffer) = 0;
 };
 
@@ -31,7 +31,7 @@ class Output {
   virtual ~Output();
 
   virtual std::string get_name() = 0;
-  virtual void draw(DrawManager* draw_manager) = 0;
+  virtual void draw(DrawManagerBase* draw_manager) = 0;
   virtual void create_anchor(Anchor** buffer) = 0;
 };
 
@@ -40,7 +40,7 @@ class InoutManager {
   InoutManager();
   ~InoutManager();
 
-  void draw(DrawManager* draw_manager);
+  void draw(DrawManagerBase* draw_manager);
   void add_input(std::shared_ptr<Input> input);
   void add_output(std::shared_ptr<Output> output);
   Anchor* get_anchor(Point point);

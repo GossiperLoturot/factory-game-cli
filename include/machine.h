@@ -49,7 +49,7 @@ class Machine {
   virtual std::string get_name() = 0;
   virtual std::vector<Anchor*> get_anchors() = 0;
 
-  virtual void draw(DrawManager* draw_manager) = 0;
+  virtual void draw(DrawManagerBase* draw_manager) = 0;
   virtual void create_idx(size_t* buffer, size_t self_idx) = 0;
   virtual void create_anchor(Anchor** buffer) = 0;
 
@@ -69,7 +69,7 @@ class InputM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -93,7 +93,7 @@ class OutputM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -119,7 +119,7 @@ class ElectrolyzerM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -146,7 +146,7 @@ class CutterM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -172,7 +172,7 @@ class LaserM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -198,7 +198,7 @@ class AssemblerM : public Machine {
   std::string get_name() override;
   std::vector<Anchor*> get_anchors() override;
 
-  void draw(DrawManager* draw_manager) override;
+  void draw(DrawManagerBase* draw_manager) override;
   void create_idx(size_t* buffer, size_t self_idx) override;
   void create_anchor(Anchor** buffer) override;
 
@@ -220,7 +220,7 @@ class MachineManager {
   MachineManager();
   ~MachineManager();
 
-  void draw(DrawManager* draw_manager);
+  void draw(DrawManagerBase* draw_manager);
   void add_machine(std::shared_ptr<Machine> machine);
   std::shared_ptr<Machine> remove_machine(Point point);
 

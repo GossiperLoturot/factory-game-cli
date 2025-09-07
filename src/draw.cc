@@ -2,125 +2,168 @@
 
 namespace factory_game {
 
-DrawManager::DrawManager(SHORT width, SHORT height, HANDLE stdout_handle)
-    : m_width(width),
-      m_height(height),
-      m_stdout_handle(stdout_handle),
-      m_current_buffer(m_width * m_height, ' '),
-      m_back_buffer(m_width * m_height, ' ') {
-  // カーソル位置を先頭に移動
-  SetConsoleCursorPosition(m_stdout_handle, {0, 0});
+DrawManagerWindows::DrawManagerWindows() {
+  m_width = 120;
+  m_height = 30;
 
-  // カーソルを非表示
-  CONSOLE_CURSOR_INFO cursor_info = {1, false};
+  m_stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  GetConsoleMode(m_stdout_handle, &m_out_mode);
+  auto out_mode = m_out_mode;
+  out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  SetConsoleMode(m_stdout_handle, out_mode);
+
+  m_stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
+  GetConsoleMode(m_stdin_handle, &m_in_mode);
+  auto in_mode = m_in_mode;
+  in_mode |= ENABLE_WINDOW_INPUT;
+  in_mode |= ENABLE_MOUSE_INPUT;
+  in_mode |= ENABLE_EXTENDED_FLAGS;
+  in_mode &= ~ENABLE_QUICK_EDIT_MODE;
+  SetConsoleMode(m_stdin_handle, in_mode);
+
+  GetConsoleCursorInfo(m_stdin_handle, &m_cursor_info);
+  auto cursor_info = m_cursor_info;
+  cursor_info.bVisible = FALSE;
   SetConsoleCursorInfo(m_stdout_handle, &cursor_info);
+
+  m_current_buffer = std::vector(m_width * m_height, ' ');
+  m_back_buffer = std::vector(m_width * m_height, ' ');
 }
 
-DrawManager::~DrawManager() {
-  clear();
-  present();
-
-  // カーソル位置を先頭に移動
-  SetConsoleCursorPosition(m_stdout_handle, {0, 0});
-
-  // カーソルを表示
-  CONSOLE_CURSOR_INFO cursor_info = {1, true};
-  SetConsoleCursorInfo(m_stdout_handle, &cursor_info);
+DrawManagerWindows::~DrawManagerWindows() {
+  SetConsoleMode(m_stdout_handle, m_out_mode);
+  SetConsoleMode(m_stdin_handle, m_in_mode);
+  SetConsoleCursorInfo(m_stdout_handle, &m_cursor_info);
 }
 
-void DrawManager::clear() {
-  fill(m_back_buffer.begin(), m_back_buffer.end(), ' ');
+int DrawManagerWindows::get_width() { return m_width; }
+
+int DrawManagerWindows::get_height() { return m_height; }
+
+void DrawManagerWindows::clear() {
+  std::fill(m_back_buffer.begin(), m_back_buffer.end(), ' ');
 }
 
-void DrawManager::draw_label(int x, int y, std::string text) {
-  if (y < 0 || y >= m_height) {
-    return;
-  }
+void DrawManagerWindows::draw_label(int x, int y, std::string_view text) {
+  if (y < 0 || y >= m_height) return;
 
   for (size_t i = 0; i < text.length(); ++i) {
-    size_t current_x = x + i;
-
-    if (current_x >= m_width) {
-      continue;
-    }
+    int current_x = x + i;
+    if (current_x < 0 || current_x >= m_width) continue;
 
     m_back_buffer[y * m_width + current_x] = text[i];
   }
 }
 
-void DrawManager::draw_label_box(int x, int y, std::string text) {
-  draw_line_box(x - 1, y - 1, static_cast<int>(text.length() + 2), 3);
+void DrawManagerWindows::draw_label_box(int x, int y, std::string_view text) {
+  draw_line_box(x - 1, y - 1, text.length() + 2, 3);
   draw_label(x, y, text);
 }
 
-void DrawManager::draw_clear_box(int x, int y, int width, int height) {
+void DrawManagerWindows::draw_clear_box(int x, int y, int width, int height) {
   for (int j = 0; j < height; ++j) {
+    int current_y = y + j;
+    if (current_y < 0 || current_y >= m_height) continue;
+
     for (int i = 0; i < width; ++i) {
       int current_x = x + i;
-      int current_y = y + j;
-      if (current_x < 0 || current_x >= m_width || current_y < 0 ||
-          current_y >= m_height) {
-        continue;
-      }
+      if (current_x < 0 || current_x >= m_width) continue;
+
       m_back_buffer[current_y * m_width + current_x] = ' ';
     }
   }
 }
 
-void DrawManager::draw_line_box(int x, int y, int width, int height) {
+void DrawManagerWindows::draw_line_box(int x, int y, int width, int height) {
   draw_hv_line(x, y, x + width - 1, y);                            // 上辺
   draw_hv_line(x, y + height - 1, x + width - 1, y + height - 1);  // 下辺
   draw_hv_line(x, y, x, y + height - 1);                           // 左辺
   draw_hv_line(x + width - 1, y, x + width - 1, y + height - 1);   // 右辺
 }
 
-void DrawManager::draw_hv_line(int x0, int y0, int x1, int y1) {
+void DrawManagerWindows::draw_hv_line(int x0, int y0, int x1, int y1) {
   // 垂直線
-  if (x0 == x1) {
+  if (x0 == x1 && x0 >= 0 && x0 < m_width) {
     if (y0 > y1) std::swap(y0, y1);
+
     for (int y = y0; y <= y1; ++y) {
-      if (x0 >= 0 && x0 < m_width && y >= 0 && y < m_height) {
-        if (y == y0 || y == y1) {
-          m_back_buffer[y * m_width + x0] = '+';
-        } else {
-          m_back_buffer[y * m_width + x0] = '|';
-        }
+      if (y < 0 || y >= m_height) continue;
+
+      if (y == y0 || y == y1) {
+        m_back_buffer[y * m_width + x0] = '+';
+      } else {
+        m_back_buffer[y * m_width + x0] = '|';
       }
     }
   }
+
   // 水平線
-  else if (y0 == y1) {
+  if (y0 == y1 && y0 >= 0 && y0 < m_height) {
     if (x0 > x1) std::swap(x0, x1);
+
     for (int x = x0; x <= x1; ++x) {
-      if (x >= 0 && x < m_width && y1 >= 0 && y1 < m_height) {
-        if (x == x0 || x == x1) {
-          m_back_buffer[y0 * m_width + x] = '+';
-        } else {
-          m_back_buffer[y0 * m_width + x] = '-';
-        }
+      if (x < 0 && x >= m_width) continue;
+
+      if (x == x0 || x == x1) {
+        m_back_buffer[y0 * m_width + x] = '+';
+      } else {
+        m_back_buffer[y0 * m_width + x] = '-';
       }
     }
   }
 }
 
-void DrawManager::present() {
+void DrawManagerWindows::present() {
   // バックバッファとカレントバッファを比較し、変更点のみを描画
-  for (SHORT y = 0; y < m_height; ++y) {
-    for (SHORT x = 0; x < m_width; ++x) {
+  for (int y = 0; y < m_height; ++y) {
+    for (int x = 0; x < m_width; ++x) {
       size_t index = y * m_width + x;
 
       if (m_back_buffer[index] != m_current_buffer[index]) {
-        SetConsoleCursorPosition(m_stdout_handle, {x, y});
+        COORD coord;
+        coord.X = static_cast<SHORT>(x);
+        coord.Y = static_cast<SHORT>(y);
+        SetConsoleCursorPosition(m_stdout_handle, coord);
 
         DWORD written;
         WriteConsole(m_stdout_handle, &m_back_buffer[index], 1, &written,
                      nullptr);
+
+        m_current_buffer[index] = m_back_buffer[index];
       }
     }
   }
 
-  // 現在の画面の状態を更新するため、バックバッファの内容をカレントバッファにコピー
-  copy(m_back_buffer.begin(), m_back_buffer.end(), m_current_buffer.begin());
+  Sleep(16);
+}
+
+void DrawManagerWindows::capture_input() {
+  DWORD num_events;
+  GetNumberOfConsoleInputEvents(m_stdin_handle, &num_events);
+
+  if (num_events == 0) {
+    m_input = INPUT_RECORD();
+    return;
+  }
+
+  ReadConsoleInput(m_stdin_handle, &m_input, 1, &num_events);
+}
+
+bool DrawManagerWindows::handle_input_keycode(int keycode) {
+  return m_input.EventType == KEY_EVENT && m_input.Event.KeyEvent.bKeyDown &&
+         m_input.Event.KeyEvent.wVirtualKeyCode == keycode;
+}
+
+bool DrawManagerWindows::handle_input_mouse(int state, int& x, int& y) {
+  if (m_input.EventType == MOUSE_EVENT &&
+      m_input.Event.MouseEvent.dwEventFlags == 0 &&
+      m_input.Event.MouseEvent.dwButtonState & state) {
+    x = m_input.Event.MouseEvent.dwMousePosition.X;
+    y = m_input.Event.MouseEvent.dwMousePosition.Y;
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace factory_game

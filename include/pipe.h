@@ -20,7 +20,7 @@ class Pipe {
   ~Pipe();
 
   std::string get_name();
-  void draw(DrawManager* draw_manager);
+  void draw(DrawManagerBase* draw_manager);
   void create_idx(size_t* buffer, size_t self_idx);
 };
 
@@ -29,7 +29,7 @@ class PipeManager {
   PipeManager();
   ~PipeManager();
 
-  void draw(DrawManager* draw_manager);
+  void draw(DrawManagerBase* draw_manager);
   void add_pipe(std::shared_ptr<Pipe> pipe);
   void remove_pipe(std::shared_ptr<Pipe> point);
   std::shared_ptr<Pipe> remove_pipe(Point point);

@@ -5,51 +5,15 @@
 
 namespace factory_game {
 
-bool handle_input_keycode(INPUT_RECORD* input, WORD keycode) {
-  return input != nullptr && input->EventType == KEY_EVENT &&
-         input->Event.KeyEvent.bKeyDown &&
-         input->Event.KeyEvent.wVirtualKeyCode == keycode;
-}
-
-bool handle_input_mouse(INPUT_RECORD* input, WORD state, SHORT* x, SHORT* y) {
-  if (input != nullptr && input->EventType == MOUSE_EVENT &&
-      input->Event.MouseEvent.dwEventFlags == 0 &&
-      input->Event.MouseEvent.dwButtonState & state) {
-    if (x != nullptr) *x = input->Event.MouseEvent.dwMousePosition.X;
-    if (y != nullptr) *y = input->Event.MouseEvent.dwMousePosition.Y;
-    return true;
-  }
-
-  return false;
-}
-
-// BASE STATE
-
-State::State() : m_input_record({}), m_num_events(0) {}
-
-State::~State() = default;
-
-INPUT_RECORD* State::capture_input(HANDLE stdin_handle) {
-  GetNumberOfConsoleInputEvents(stdin_handle, &m_num_events);
-
-  if (m_num_events > 0) {
-    ReadConsoleInput(stdin_handle, &m_input_record, 1, &m_num_events);
-
-    return &m_input_record;
-  }
-
-  return nullptr;
-}
-
 // TITLE STATE
 
-TitleState::TitleState() : State::State() {}
+TitleState::TitleState() = default;
 
 TitleState::~TitleState() = default;
 
 std::string TitleState::get_name() { return "Title"; }
 
-State* TitleState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
+State* TitleState::update(DrawManagerBase* draw_manager) {
   draw_manager->clear();
 
   draw_manager->draw_label(
@@ -63,20 +27,23 @@ State* TitleState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
                            "koku ikkoku to semaru zikan no naka de saiteki kai "
                            "wo syunji ni mitibiki dasou!");
 
-  draw_manager->draw_line_box(0, 0, draw_manager->m_width,
-                              draw_manager->m_height - 2);
+  draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
+                              draw_manager->get_height() - 2);
   draw_manager->draw_label_box(1, 1, get_name());
   draw_manager->present();
 
-  INPUT_RECORD* input = capture_input(stdin_handle);
-  if (handle_input_keycode(input, VK_RETURN)) {
+  draw_manager->capture_input();
+
+  if (draw_manager->handle_input_keycode(VK_RETURN)) {
     return new InGameState(1);
   }
-  if (handle_input_keycode(input, VK_ESCAPE)) {
+
+  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
     return nullptr;
   }
-  if (handle_input_mouse(input, FROM_LEFT_1ST_BUTTON_PRESSED, nullptr,
-                         nullptr)) {
+
+  int x, y;
+  if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x, y)) {
     return new InGameState(1);
   }
 
@@ -150,14 +117,15 @@ InGameState::~InGameState() = default;
 
 std::string InGameState::get_name() { return "In Game"; }
 
-State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
+State* InGameState::update(DrawManagerBase* draw_manager) {
   draw_manager->clear();
 
   m_pipe_manager.draw(draw_manager);
   m_machine_manager.draw(draw_manager);
 
-  INPUT_RECORD* input = capture_input(stdin_handle);
-  if (handle_input_keycode(input, VK_TAB)) {
+  draw_manager->capture_input();
+
+  if (draw_manager->handle_input_keycode(VK_TAB)) {
     if (m_mode == MODE_PLACE_PIPE || m_mode == MODE_LINK_PIPE) {
       m_mode = MODE_PLACE_MACHINE;
       m_mode_state.PlaceMachine = {MACHINE_ELECTROLYZER};
@@ -166,13 +134,13 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
       m_mode_state.PlacePipe = {};
     }
   }
-  if (handle_input_keycode(input, VK_RETURN)) {
+  if (draw_manager->handle_input_keycode(VK_RETURN)) {
     if (m_mode != MODE_EVALUATE) {
       m_mode = MODE_EVALUATE;
       m_mode_state.Evaluate = {0};
     }
   }
-  if (handle_input_keycode(input, 'R')) {
+  if (draw_manager->handle_input_keycode('R')) {
     if (m_mode != MODE_EVALUATE) {
       if (m_mode == MODE_RECIPE)
         m_mode = MODE_PLACE_PIPE;
@@ -181,15 +149,16 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
     }
   }
 
-  SHORT x, y;
   switch (m_mode) {
     case MODE_PLACE_PIPE: {
-      draw_manager->draw_label(1, draw_manager->m_height - 2, "Place Pipe");
-      draw_manager->draw_label(1, draw_manager->m_height - 1,
+      draw_manager->draw_label(1, draw_manager->get_height() - 2, "Place Pipe");
+      draw_manager->draw_label(1, draw_manager->get_height() - 1,
                                "LClick: Place, RClick: Remove, Tab: Change "
                                "Mode, Enter: Submit, Esc: Quit, R: Recipe");
 
-      if (handle_input_mouse(input, FROM_LEFT_1ST_BUTTON_PRESSED, &x, &y)) {
+      int x, y;
+      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
+                                           y)) {
         Anchor* anchor = m_machine_manager.get_anchor(Point(x, y));
 
         if (anchor != nullptr) {
@@ -200,15 +169,17 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
       break;
     }
     case MODE_LINK_PIPE: {
-      draw_manager->draw_label(1, draw_manager->m_height - 2, "Link Pipe");
-      draw_manager->draw_label(1, draw_manager->m_height - 1,
+      draw_manager->draw_label(1, draw_manager->get_height() - 2, "Link Pipe");
+      draw_manager->draw_label(1, draw_manager->get_height() - 1,
                                "LClick: Place, RClick: Remove, Tab: Change "
                                "Mode, Enter: Submit, Esc: Quit, R: Recipe");
 
       draw_manager->draw_label(m_mode_state.LinkPipe.x, m_mode_state.LinkPipe.y,
                                "X");
 
-      if (handle_input_mouse(input, FROM_LEFT_1ST_BUTTON_PRESSED, &x, &y)) {
+      int x, y;
+      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
+                                           y)) {
         Point point = Point(x, y);
 
         Anchor* anchor = m_machine_manager.get_anchor(point);
@@ -232,23 +203,26 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
       break;
     }
     case MODE_PLACE_MACHINE: {
-      draw_manager->draw_label(1, draw_manager->m_height - 2, "Place Machine");
+      draw_manager->draw_label(1, draw_manager->get_height() - 2,
+                               "Place Machine");
       draw_manager->draw_label(
-          1, draw_manager->m_height - 1,
+          1, draw_manager->get_height() - 1,
           "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, "
           "Esc: Quit, R: Recipe, Space: Change Machine");
       if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
-        draw_manager->draw_label(15, draw_manager->m_height - 2,
+        draw_manager->draw_label(15, draw_manager->get_height() - 2,
                                  "[Electrolyzer]");
       } else if (m_mode_state.PlaceMachine.machine == MACHINE_CUTTER) {
-        draw_manager->draw_label(15, draw_manager->m_height - 2, "[Cutter]");
+        draw_manager->draw_label(15, draw_manager->get_height() - 2,
+                                 "[Cutter]");
       } else if (m_mode_state.PlaceMachine.machine == MACHINE_LAZER) {
-        draw_manager->draw_label(15, draw_manager->m_height - 2, "[Lazer]");
+        draw_manager->draw_label(15, draw_manager->get_height() - 2, "[Lazer]");
       } else if (m_mode_state.PlaceMachine.machine == MACHINE_ASSEMBLER) {
-        draw_manager->draw_label(15, draw_manager->m_height - 2, "[Assembler]");
+        draw_manager->draw_label(15, draw_manager->get_height() - 2,
+                                 "[Assembler]");
       }
 
-      if (handle_input_keycode(input, VK_SPACE)) {
+      if (draw_manager->handle_input_keycode(VK_SPACE)) {
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
           m_mode_state.PlaceMachine.machine = MACHINE_CUTTER;
         } else if (m_mode_state.PlaceMachine.machine == MACHINE_CUTTER) {
@@ -260,7 +234,9 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
         }
       }
 
-      if (handle_input_mouse(input, FROM_LEFT_1ST_BUTTON_PRESSED, &x, &y)) {
+      int x, y;
+      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
+                                           y)) {
         Point point = Point(x, y);
 
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
@@ -292,7 +268,8 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
     };
   }
   if (m_mode != MODE_EVALUATE && m_mode != MODE_RECIPE) {
-    if (handle_input_mouse(input, RIGHTMOST_BUTTON_PRESSED, &x, &y)) {
+    int x, y;
+    if (draw_manager->handle_input_mouse(RIGHTMOST_BUTTON_PRESSED, x, y)) {
       if (m_mode == MODE_LINK_PIPE) {
         m_mode = MODE_PLACE_PIPE;
         m_mode_state.PlacePipe = {};
@@ -412,15 +389,15 @@ State* InGameState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
               << std::setfill('0') << (m_stats.design_time % 60);
   std::string time = time_stream.str();
   draw_manager->draw_label_box(
-      draw_manager->m_width - 1 - static_cast<int>(time.size()),
-      draw_manager->m_height - 4, time);
+      draw_manager->get_width() - 1 - static_cast<int>(time.size()),
+      draw_manager->get_height() - 4, time);
 
-  draw_manager->draw_line_box(0, 0, draw_manager->m_width,
-                              draw_manager->m_height - 2);
+  draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
+                              draw_manager->get_height() - 2);
   draw_manager->draw_label_box(1, 1, get_name());
   draw_manager->present();
 
-  if (handle_input_keycode(input, VK_ESCAPE)) {
+  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
     return new ResultState(m_stats);
   }
 
@@ -437,7 +414,7 @@ ResultState::~ResultState() = default;
 std::string ResultState::get_name() { return "Result"; }
 
 // ゲームの結果標示、処理は雑
-State* ResultState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
+State* ResultState::update(DrawManagerBase* draw_manager) {
   draw_manager->clear();
 
   draw_manager->draw_label_box(30, 10, "Game Result");
@@ -477,23 +454,26 @@ State* ResultState::update(HANDLE stdin_handle, DrawManager* draw_manager) {
   else
     draw_manager->draw_label(43, 10, "Perfect!!!");
 
-  draw_manager->draw_line_box(0, 0, draw_manager->m_width,
-                              draw_manager->m_height - 2);
+  draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
+                              draw_manager->get_height() - 2);
   draw_manager->draw_label_box(1, 1, get_name());
   draw_manager->present();
 
-  INPUT_RECORD* input = capture_input(stdin_handle);
-  if (handle_input_keycode(input, VK_RETURN)) {
+  draw_manager->capture_input();
+
+  if (draw_manager->handle_input_keycode(VK_RETURN)) {
     if (m_stats.stage == 1 && is_bad_inv)
       return new InGameState(2);
     else
       return nullptr;
   }
-  if (handle_input_keycode(input, VK_ESCAPE)) {
+
+  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
     return nullptr;
   }
-  if (handle_input_mouse(input, FROM_LEFT_1ST_BUTTON_PRESSED, nullptr,
-                         nullptr)) {
+
+  int x, y;
+  if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x, y)) {
     if (m_stats.stage == 1 && is_bad_inv)
       return new InGameState(2);
     else

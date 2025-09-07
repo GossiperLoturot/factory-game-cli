@@ -14,7 +14,7 @@ Pipe::~Pipe() = default;
 
 std::string Pipe::get_name() { return "Pipe"; }
 
-void Pipe::draw(DrawManager* draw_manager) {
+void Pipe::draw(DrawManagerBase* draw_manager) {
   if (begin.x == end.x || begin.y == end.y) {
     draw_manager->draw_hv_line(begin.x, begin.y, end.x, end.y);
   } else {
@@ -94,7 +94,7 @@ void PipeManager::remove_pipe(std::shared_ptr<Pipe> pipe) {
   }
 }
 
-void PipeManager::draw(DrawManager* draw_manager) {
+void PipeManager::draw(DrawManagerBase* draw_manager) {
   for (size_t i = 0; i < m_pipes.size(); ++i) {
     std::shared_ptr<Pipe> pipe = m_pipes[i];
     pipe->draw(draw_manager);
