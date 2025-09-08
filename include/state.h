@@ -8,6 +8,13 @@
 
 namespace factory_game {
 
+enum Machines {
+  MACHINE_ELECTROLYZER,
+  MACHINE_CUTTER,
+  MACHINE_LAZER,
+  MACHINE_ASSEMBLER,
+};
+
 enum Modes {
   MODE_PLACE_PIPE,
   MODE_LINK_PIPE,
@@ -64,19 +71,19 @@ class InGameState : public State {
   Modes m_mode;
   ModeState m_mode_state;
   std::default_random_engine m_rng;
-  ProductiveStats m_stats;
+  EvaluateContext m_stats;
 };
 
 class ResultState : public State {
  public:
-  ResultState(ProductiveStats m_game_score);
+  ResultState(EvaluateContext m_game_score);
   ~ResultState() override;
 
   std::string get_name() override;
   State* update(DrawManagerBase* draw_manager) override;
 
  private:
-  ProductiveStats m_stats;
+  EvaluateContext m_stats;
 };
 
 }  // namespace factory_game

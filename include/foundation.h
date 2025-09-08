@@ -1,15 +1,9 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace factory_game {
-
-struct Point {
-  int x;
-  int y;
-
-  Point(int x, int y) : x(x), y(y) {}
-};
 
 enum Item {
   ITEM_WATER,
@@ -26,5 +20,13 @@ enum Item {
 };
 
 std::string item_to_string(Item item);
+
+struct EvaluateContext {
+  int stage;
+  int design_time;
+  std::vector<Item> items;
+  std::vector<int> counts;
+};
+
 
 }  // namespace factory_game

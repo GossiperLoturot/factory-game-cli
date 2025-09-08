@@ -8,3 +8,4 @@ file(GLOB SOURCE "src/*.cc")
 
 add_executable(factory_game ${HEADER} ${SOURCE})
 target_include_directories(factory_game PRIVATE include)
+target_include_directories(factory_game PRIVATE third_party/glm)

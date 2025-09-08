@@ -66,19 +66,19 @@ InGameState::InGameState(int stage)
   // Stage 1.
   if (stage == 1) {
     {
-      auto machine = std::make_shared<InputM>(InputM(Point(50, 5), ITEM_WATER));
+      auto machine = std::make_shared<InputM>(InputM(glm::ivec2(50, 5), ITEM_WATER));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
     {
       auto machine =
-          std::make_shared<OutputM>(OutputM(Point(30, 25), ITEM_HYDROGEN));
+          std::make_shared<OutputM>(OutputM(glm::ivec2(30, 25), ITEM_HYDROGEN));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
     {
       auto machine =
-          std::make_shared<OutputM>(OutputM(Point(70, 25), ITEM_OXYGEN));
+          std::make_shared<OutputM>(OutputM(glm::ivec2(70, 25), ITEM_OXYGEN));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
@@ -88,25 +88,25 @@ InGameState::InGameState(int stage)
   if (stage == 2) {
     {
       auto machine =
-          std::make_shared<InputM>(InputM(Point(30, 5), ITEM_SILICON));
+          std::make_shared<InputM>(InputM(glm::ivec2(30, 5), ITEM_SILICON));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
     {
       auto machine =
-          std::make_shared<InputM>(InputM(Point(50, 5), ITEM_SOLDERING_IRON));
+          std::make_shared<InputM>(InputM(glm::ivec2(50, 5), ITEM_SOLDERING_IRON));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
     {
       auto machine =
-          std::make_shared<InputM>(InputM(Point(70, 5), ITEM_CIRCUIT_BOARD));
+          std::make_shared<InputM>(InputM(glm::ivec2(70, 5), ITEM_CIRCUIT_BOARD));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
     {
       auto machine =
-          std::make_shared<OutputM>(OutputM(Point(50, 25), ITEM_CHIP));
+          std::make_shared<OutputM>(OutputM(glm::ivec2(50, 25), ITEM_CHIP));
       machine->upgrade_anchors();
       m_machine_manager.add_machine(machine);
     }
@@ -159,7 +159,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        Anchor* anchor = m_machine_manager.get_anchor(Point(x, y));
+        Anchor* anchor = m_machine_manager.get_anchor(glm::ivec2(x, y));
 
         if (anchor != nullptr) {
           m_mode = MODE_LINK_PIPE;
@@ -180,7 +180,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        Point point = Point(x, y);
+        glm::ivec2 point = glm::ivec2(x, y);
 
         Anchor* anchor = m_machine_manager.get_anchor(point);
         if (anchor != nullptr) {
@@ -188,7 +188,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
           Anchor* begin_anchor = m_mode_state.LinkPipe.anchor;
           Anchor* end_anchor = anchor;
           std::shared_ptr<Pipe> pipe = std::make_shared<Pipe>(
-              Pipe(Point(m_mode_state.LinkPipe.x, m_mode_state.LinkPipe.y),
+              Pipe(glm::ivec2(m_mode_state.LinkPipe.x, m_mode_state.LinkPipe.y),
                    point, begin_anchor, end_anchor));
           m_pipe_manager.add_pipe(pipe);
           begin_anchor->m_piped_anchors.push_back(end_anchor);
@@ -237,7 +237,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        Point point = Point(x, y);
+        glm::ivec2 point = glm::ivec2(x, y);
 
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
           std::shared_ptr<Machine> machine =
@@ -278,8 +278,9 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       std::shared_ptr<Pipe> pipe;
       std::shared_ptr<Machine> machine;
 
-      pipe = m_pipe_manager.remove_pipe(Point(x, y));
+      pipe = m_pipe_manager.find_pipe(glm::ivec2(x, y));
       if (pipe != nullptr) {
+        m_pipe_manager.remove_pipe(pipe);
         Anchor* begin = pipe->begin_anchor;
         Anchor* end = pipe->end_anchor;
         {
@@ -299,8 +300,9 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
         goto OUTSIDE;
       }
-      machine = m_machine_manager.remove_machine(Point(x, y));
+      machine = m_machine_manager.find_machine(glm::ivec2(x, y));
       if (machine != nullptr) {
+        m_machine_manager.remove_machine(machine);
         std::vector<Anchor*> machine_anchors = machine->get_anchors();
         for (size_t i = 0; i < machine_anchors.size(); ++i) {
           Anchor* machine_anchor = machine_anchors[i];
@@ -406,7 +408,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
 // RESULT STATE
 
-ResultState::ResultState(ProductiveStats stats)
+ResultState::ResultState(EvaluateContext stats)
     : State::State(), m_stats(stats) {}
 
 ResultState::~ResultState() = default;
