@@ -28,5 +28,4 @@ struct EvaluateContext {
   std::vector<int> counts;
 };
 
-
 }  // namespace factory_game

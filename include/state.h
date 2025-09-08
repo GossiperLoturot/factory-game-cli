@@ -1,5 +1,6 @@
 #pragma once
 
+#include <random>
 #include <string>
 
 #include "draw.h"
@@ -29,7 +30,6 @@ union ModeState {
   struct {
     int x;
     int y;
-    Anchor* anchor;
   } LinkPipe;
   struct {
     Machines machine;
@@ -41,10 +41,9 @@ union ModeState {
 
 class State {
  public:
-  State() = default;
-  virtual ~State() = default;
+  State();
+  virtual ~State();
 
-  virtual std::string get_name() = 0;
   virtual State* update(DrawManagerBase* draw_manager) = 0;
 };
 
@@ -53,7 +52,6 @@ class TitleState : public State {
   TitleState();
   ~TitleState() override;
 
-  std::string get_name() override;
   State* update(DrawManagerBase* draw_manager) override;
 };
 
@@ -62,7 +60,6 @@ class InGameState : public State {
   InGameState(int stage);
   ~InGameState() override;
 
-  std::string get_name() override;
   State* update(DrawManagerBase* draw_manager) override;
 
  private:
@@ -79,7 +76,6 @@ class ResultState : public State {
   ResultState(EvaluateContext m_game_score);
   ~ResultState() override;
 
-  std::string get_name() override;
   State* update(DrawManagerBase* draw_manager) override;
 
  private:

@@ -2,7 +2,7 @@
 
 namespace factory_game {
 
-std::string item_to_string(Item item) {
+std::string item_to_string(const Item item) {
   switch (item) {
     case ITEM_WATER:
       return "Water";

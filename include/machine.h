@@ -1,43 +1,30 @@
 #pragma once
 
-#include <memory>
-#include <random>
-#include <vector>
-#include <unordered_set>
-#include <unordered_map>
-
-#include <glm/vec2.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/gtx/hash.hpp>
+#include <glm/vec2.hpp>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "draw.h"
 #include "foundation.h"
 
 namespace factory_game {
 
-class Pipe;     // for pointer reference
-
 class Machine;  // for pointer reference
 
-class Anchor {
-public:
-  Machine* m_parent;
-  std::vector<std::shared_ptr<Pipe>> m_pipes;
-  std::vector<Anchor*> m_piped_anchors;
-
-  Anchor();
-  explicit Anchor(Machine* parent);
-  ~Anchor();
-};
-
 class MachineSpatialIdx {
-public:
-  MachineSpatialIdx(std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& spatial_idx, std::shared_ptr<Machine>& cursor);
+ public:
+  MachineSpatialIdx(
+      std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& spatial_idx,
+      std::shared_ptr<Machine>& cursor);
   ~MachineSpatialIdx();
 
-  void Write(glm::ivec2 point);
+  void Write(glm::ivec2 point) const;
 
-private:
+ private:
   std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& m_spatial_idx;
   std::shared_ptr<Machine>& m_cursor;
 };
@@ -53,165 +40,78 @@ class Machine {
 
   virtual void draw(DrawManagerBase* draw_manager) = 0;
   virtual void build_spatial_idx(MachineSpatialIdx writer) = 0;
-
-  virtual void upgrade_anchors() = 0;
-  virtual std::vector<Anchor*> get_anchors() = 0;
-  virtual void create_anchor(Anchor** buffer) = 0;
-
-  virtual void insert_item(Item given_item) = 0;
-  virtual void evaluate(EvaluateContext* stats,
-                        std::default_random_engine rng) = 0;
 };
 
-class InputM : public Machine {
+class InputDuct : public Machine {
  public:
-  InputM(glm::ivec2 point, Item item);
-  ~InputM() override;
+  InputDuct(glm::ivec2 point, Item item);
+  ~InputDuct() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
 
  private:
   Item item;
-  Anchor m_output;
 };
 
-class OutputM : public Machine {
+class OutputDuct : public Machine {
  public:
-  OutputM(glm::ivec2 point, Item item);
-  ~OutputM() override;
+  OutputDuct(glm::ivec2 point, Item item);
+  ~OutputDuct() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
 
  private:
   Item item;
-  Anchor m_input;
-
-  int m_stored_count;
 };
 
-class ElectrolyzerM : public Machine {
+class Electrolyzer : public Machine {
  public:
-  ElectrolyzerM(glm::ivec2 point);
-  ~ElectrolyzerM() override;
+  Electrolyzer(glm::ivec2 point);
+  ~Electrolyzer() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
-
- private:
-  Anchor m_input;
-  Anchor m_output0;
-  Anchor m_output1;
-
-  int m_stored_count;
 };
 
-class CutterM : public Machine {
+class Cutter : public Machine {
  public:
-  CutterM(glm::ivec2 point);
-  ~CutterM() override;
+  Cutter(glm::ivec2 point);
+  ~Cutter() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
-
- private:
-  Anchor m_input;
-  Anchor m_output;
-
-  int m_stored_count[2];
 };
 
-class LaserM : public Machine {
+class Laser : public Machine {
  public:
-  LaserM(glm::ivec2 point);
-  ~LaserM() override;
+  Laser(glm::ivec2 point);
+  ~Laser() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
-
- private:
-  Anchor m_input;
-  Anchor m_output;
-
-  int m_stored_count;
 };
 
-class AssemblerM : public Machine {
+class Assembler : public Machine {
  public:
-  explicit AssemblerM(glm::ivec2 point);
-  ~AssemblerM() override;
+  explicit Assembler(glm::ivec2 point);
+  ~Assembler() override;
 
   bool is_breakable() override;
 
   void draw(DrawManagerBase* draw_manager) override;
   void build_spatial_idx(MachineSpatialIdx writer) override;
-
-  void upgrade_anchors() override;
-  std::vector<Anchor*> get_anchors() override;
-  void create_anchor(Anchor** buffer) override;
-
-  void insert_item(Item given_item) override;
-  void evaluate(EvaluateContext* stats,
-                std::default_random_engine rng) override;
-
- private:
-  Anchor m_input0;
-  Anchor m_input1;
-  Anchor m_input2;
-  Anchor m_output;
-
-  int m_stored_count[3];
 };
 
 class MachineManager {
@@ -220,20 +120,14 @@ class MachineManager {
   ~MachineManager();
 
   void build_spatial_idx();
-  void add_machine(std::shared_ptr<Machine> machine);
-  void remove_machine(std::shared_ptr<Machine> machine);
+  void add_machine(const std::shared_ptr<Machine>& machine);
+  void remove_machine(const std::shared_ptr<Machine>& machine);
   std::shared_ptr<Machine> find_machine(glm::ivec2 point);
-  void draw(DrawManagerBase* draw_manager);
-
-  Anchor* get_anchor(glm::ivec2 point);
-
-  void evaluate(EvaluateContext* stats, std::default_random_engine rng);
+  void draw(DrawManagerBase* draw_manager) const;
 
  private:
   std::unordered_set<std::shared_ptr<Machine>> m_machines;
   std::unordered_map<glm::ivec2, std::shared_ptr<Machine>> m_spatial_idx;
-
-  std::vector<Anchor*> m_anchor_idx;
 };
 
 }  // namespace factory_game

@@ -2,6 +2,12 @@
 
 namespace factory_game {
 
+DrawManagerBase::DrawManagerBase() {}
+
+DrawManagerBase::~DrawManagerBase() = default;
+
+// Windows
+
 DrawManagerWindows::DrawManagerWindows() {
   m_width = 120;
   m_height = 30;
@@ -28,6 +34,8 @@ DrawManagerWindows::DrawManagerWindows() {
 
   m_current_buffer = std::vector(m_width * m_height, ' ');
   m_back_buffer = std::vector(m_width * m_height, ' ');
+
+  m_input = INPUT_RECORD();
 }
 
 DrawManagerWindows::~DrawManagerWindows() {
@@ -44,29 +52,32 @@ void DrawManagerWindows::clear() {
   std::fill(m_back_buffer.begin(), m_back_buffer.end(), ' ');
 }
 
-void DrawManagerWindows::draw_label(int x, int y, std::string_view text) {
+void DrawManagerWindows::draw_label(const int x, const int y,
+                                    const std::string_view text) {
   if (y < 0 || y >= m_height) return;
 
   for (size_t i = 0; i < text.length(); ++i) {
-    int current_x = x + i;
+    const int current_x = x + i;
     if (current_x < 0 || current_x >= m_width) continue;
 
     m_back_buffer[y * m_width + current_x] = text[i];
   }
 }
 
-void DrawManagerWindows::draw_label_box(int x, int y, std::string_view text) {
+void DrawManagerWindows::draw_label_box(const int x, const int y,
+                                        const std::string_view text) {
   draw_line_box(x - 1, y - 1, text.length() + 2, 3);
   draw_label(x, y, text);
 }
 
-void DrawManagerWindows::draw_clear_box(int x, int y, int width, int height) {
+void DrawManagerWindows::draw_clear_box(const int x, const int y,
+                                        const int width, const int height) {
   for (int j = 0; j < height; ++j) {
-    int current_y = y + j;
+    const int current_y = y + j;
     if (current_y < 0 || current_y >= m_height) continue;
 
     for (int i = 0; i < width; ++i) {
-      int current_x = x + i;
+      const int current_x = x + i;
       if (current_x < 0 || current_x >= m_width) continue;
 
       m_back_buffer[current_y * m_width + current_x] = ' ';
@@ -74,7 +85,8 @@ void DrawManagerWindows::draw_clear_box(int x, int y, int width, int height) {
   }
 }
 
-void DrawManagerWindows::draw_line_box(int x, int y, int width, int height) {
+void DrawManagerWindows::draw_line_box(const int x, const int y,
+                                       const int width, const int height) {
   draw_hv_line(x, y, x + width - 1, y);                            // 上辺
   draw_hv_line(x, y + height - 1, x + width - 1, y + height - 1);  // 下辺
   draw_hv_line(x, y, x, y + height - 1);                           // 左辺
@@ -149,12 +161,12 @@ void DrawManagerWindows::capture_input() {
   ReadConsoleInput(m_stdin_handle, &m_input, 1, &num_events);
 }
 
-bool DrawManagerWindows::handle_input_keycode(int keycode) {
+bool DrawManagerWindows::handle_input_keycode(const int keycode) {
   return m_input.EventType == KEY_EVENT && m_input.Event.KeyEvent.bKeyDown &&
          m_input.Event.KeyEvent.wVirtualKeyCode == keycode;
 }
 
-bool DrawManagerWindows::handle_input_mouse(int state, int& x, int& y) {
+bool DrawManagerWindows::handle_input_mouse(const int state, int& x, int& y) {
   if (m_input.EventType == MOUSE_EVENT &&
       m_input.Event.MouseEvent.dwEventFlags == 0 &&
       m_input.Event.MouseEvent.dwButtonState & state) {

@@ -1,35 +1,28 @@
 #include "state.h"
 
-#include <algorithm>
 #include <iomanip>
 
 namespace factory_game {
 
+// STATE
+
+State::State() {}
+
+State::~State() = default;
+
 // TITLE STATE
 
-TitleState::TitleState() = default;
+TitleState::TitleState() {}
 
 TitleState::~TitleState() = default;
-
-std::string TitleState::get_name() { return "Title"; }
 
 State* TitleState::update(DrawManagerBase* draw_manager) {
   draw_manager->clear();
 
-  draw_manager->draw_label(
-      10, 5,
-      "Anata ha seisan rainn no sekkei wo ukewou kaisya no syainn desu.");
-  draw_manager->draw_label(
-      10, 6,
-      "Tugi tugi to maikomu irai ni taisite seigen zikan nai ni saiteki na "
-      "seisan rainn wo sekkei site kudasai.");
-  draw_manager->draw_label(10, 7,
-                           "koku ikkoku to semaru zikan no naka de saiteki kai "
-                           "wo syunji ni mitibiki dasou!");
-
   draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
                               draw_manager->get_height() - 2);
-  draw_manager->draw_label_box(1, 1, get_name());
+  draw_manager->draw_label_box(1, 1, "Title");
+
   draw_manager->present();
 
   draw_manager->capture_input();
@@ -52,11 +45,8 @@ State* TitleState::update(DrawManagerBase* draw_manager) {
 
 // IN-GAME STATE
 
-InGameState::InGameState(int stage)
-    : State::State(),
-      m_pipe_manager(),
-      m_machine_manager(),
-      m_mode(MODE_PLACE_PIPE),
+InGameState::InGameState(const int stage)
+    : m_mode(MODE_PLACE_PIPE),
       m_mode_state({}),
       m_rng(std::random_device()()),
       m_stats() {
@@ -66,20 +56,18 @@ InGameState::InGameState(int stage)
   // Stage 1.
   if (stage == 1) {
     {
-      auto machine = std::make_shared<InputM>(InputM(glm::ivec2(50, 5), ITEM_WATER));
-      machine->upgrade_anchors();
+      const auto machine =
+          std::make_shared<InputDuct>(InputDuct(glm::ivec2(50, 5), ITEM_WATER));
       m_machine_manager.add_machine(machine);
     }
     {
-      auto machine =
-          std::make_shared<OutputM>(OutputM(glm::ivec2(30, 25), ITEM_HYDROGEN));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<OutputDuct>(
+          OutputDuct(glm::ivec2(30, 25), ITEM_HYDROGEN));
       m_machine_manager.add_machine(machine);
     }
     {
-      auto machine =
-          std::make_shared<OutputM>(OutputM(glm::ivec2(70, 25), ITEM_OXYGEN));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<OutputDuct>(
+          OutputDuct(glm::ivec2(70, 25), ITEM_OXYGEN));
       m_machine_manager.add_machine(machine);
     }
   }
@@ -87,35 +75,29 @@ InGameState::InGameState(int stage)
   // Stage 2.
   if (stage == 2) {
     {
-      auto machine =
-          std::make_shared<InputM>(InputM(glm::ivec2(30, 5), ITEM_SILICON));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<InputDuct>(
+          InputDuct(glm::ivec2(30, 5), ITEM_SILICON));
       m_machine_manager.add_machine(machine);
     }
     {
-      auto machine =
-          std::make_shared<InputM>(InputM(glm::ivec2(50, 5), ITEM_SOLDERING_IRON));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<InputDuct>(
+          InputDuct(glm::ivec2(50, 5), ITEM_SOLDERING_IRON));
       m_machine_manager.add_machine(machine);
     }
     {
-      auto machine =
-          std::make_shared<InputM>(InputM(glm::ivec2(70, 5), ITEM_CIRCUIT_BOARD));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<InputDuct>(
+          InputDuct(glm::ivec2(70, 5), ITEM_CIRCUIT_BOARD));
       m_machine_manager.add_machine(machine);
     }
     {
-      auto machine =
-          std::make_shared<OutputM>(OutputM(glm::ivec2(50, 25), ITEM_CHIP));
-      machine->upgrade_anchors();
+      const auto machine = std::make_shared<OutputDuct>(
+          OutputDuct(glm::ivec2(50, 25), ITEM_CHIP));
       m_machine_manager.add_machine(machine);
     }
   }
 }
 
 InGameState::~InGameState() = default;
-
-std::string InGameState::get_name() { return "In Game"; }
 
 State* InGameState::update(DrawManagerBase* draw_manager) {
   draw_manager->clear();
@@ -134,12 +116,14 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       m_mode_state.PlacePipe = {};
     }
   }
+
   if (draw_manager->handle_input_keycode(VK_RETURN)) {
     if (m_mode != MODE_EVALUATE) {
       m_mode = MODE_EVALUATE;
       m_mode_state.Evaluate = {0};
     }
   }
+
   if (draw_manager->handle_input_keycode('R')) {
     if (m_mode != MODE_EVALUATE) {
       if (m_mode == MODE_RECIPE)
@@ -159,12 +143,9 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        Anchor* anchor = m_machine_manager.get_anchor(glm::ivec2(x, y));
+        const auto point = glm::ivec2(x, y);
 
-        if (anchor != nullptr) {
-          m_mode = MODE_LINK_PIPE;
-          m_mode_state.LinkPipe = {x, y, anchor};
-        }
+        // TODO
       }
       break;
     }
@@ -180,25 +161,9 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        glm::ivec2 point = glm::ivec2(x, y);
+        const auto point = glm::ivec2(x, y);
 
-        Anchor* anchor = m_machine_manager.get_anchor(point);
-        if (anchor != nullptr) {
-          // 生産ラインのの入出力の関連付け
-          Anchor* begin_anchor = m_mode_state.LinkPipe.anchor;
-          Anchor* end_anchor = anchor;
-          std::shared_ptr<Pipe> pipe = std::make_shared<Pipe>(
-              Pipe(glm::ivec2(m_mode_state.LinkPipe.x, m_mode_state.LinkPipe.y),
-                   point, begin_anchor, end_anchor));
-          m_pipe_manager.add_pipe(pipe);
-          begin_anchor->m_piped_anchors.push_back(end_anchor);
-          begin_anchor->m_pipes.push_back(pipe);
-          end_anchor->m_piped_anchors.push_back(begin_anchor);
-          end_anchor->m_pipes.push_back(pipe);
-
-          m_mode = MODE_PLACE_PIPE;
-          m_mode_state.PlacePipe = {};
-        }
+        // TODO
       }
       break;
     }
@@ -209,6 +174,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
           1, draw_manager->get_height() - 1,
           "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, "
           "Esc: Quit, R: Recipe, Space: Change Machine");
+
       if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
         draw_manager->draw_label(15, draw_manager->get_height() - 2,
                                  "[Electrolyzer]");
@@ -237,36 +203,28 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       int x, y;
       if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
                                            y)) {
-        glm::ivec2 point = glm::ivec2(x, y);
+        const auto point = glm::ivec2(x, y);
 
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
-          std::shared_ptr<Machine> machine =
-              std::make_shared<ElectrolyzerM>(ElectrolyzerM(point));
-          machine->upgrade_anchors();
+          const auto machine =
+              std::make_shared<Electrolyzer>(Electrolyzer(point));
           m_machine_manager.add_machine(machine);
         } else if (m_mode_state.PlaceMachine.machine == MACHINE_CUTTER) {
-          std::shared_ptr<Machine> machine =
-              std::make_shared<CutterM>(CutterM(point));
-          machine->upgrade_anchors();
+          const auto machine = std::make_shared<Cutter>(Cutter(point));
           m_machine_manager.add_machine(machine);
         } else if (m_mode_state.PlaceMachine.machine == MACHINE_LAZER) {
-          std::shared_ptr<Machine> machine =
-              std::make_shared<LaserM>(LaserM(point));
-          machine->upgrade_anchors();
+          const auto machine = std::make_shared<Laser>(Laser(point));
           m_machine_manager.add_machine(machine);
         } else if (m_mode_state.PlaceMachine.machine == MACHINE_ASSEMBLER) {
-          std::shared_ptr<Machine> machine =
-              std::make_shared<AssemblerM>(AssemblerM(point));
-          machine->upgrade_anchors();
+          const auto machine = std::make_shared<Assembler>(Assembler(point));
           m_machine_manager.add_machine(machine);
         }
       }
+
       break;
     }
-    default: {
-      break;
-    };
   }
+
   if (m_mode != MODE_EVALUATE && m_mode != MODE_RECIPE) {
     int x, y;
     if (draw_manager->handle_input_mouse(RIGHTMOST_BUTTON_PRESSED, x, y)) {
@@ -275,71 +233,10 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
         m_mode_state.PlacePipe = {};
       }
 
-      std::shared_ptr<Pipe> pipe;
-      std::shared_ptr<Machine> machine;
-
-      pipe = m_pipe_manager.find_pipe(glm::ivec2(x, y));
-      if (pipe != nullptr) {
-        m_pipe_manager.remove_pipe(pipe);
-        Anchor* begin = pipe->begin_anchor;
-        Anchor* end = pipe->end_anchor;
-        {
-          std::vector<std::shared_ptr<Pipe>> pipes = begin->m_pipes;
-          pipes.erase(remove(pipes.begin(), pipes.end(), pipe), pipes.end());
-          std::vector<Anchor*> anchors = begin->m_piped_anchors;
-          anchors.erase(remove(anchors.begin(), anchors.end(), end),
-                        anchors.end());
-        }
-        {
-          std::vector<std::shared_ptr<Pipe>> pipes = end->m_pipes;
-          pipes.erase(remove(pipes.begin(), pipes.end(), pipe), pipes.end());
-          std::vector<Anchor*> anchors = end->m_piped_anchors;
-          anchors.erase(remove(anchors.begin(), anchors.end(), begin),
-                        anchors.end());
-        }
-
-        goto OUTSIDE;
-      }
-      machine = m_machine_manager.find_machine(glm::ivec2(x, y));
-      if (machine != nullptr) {
-        m_machine_manager.remove_machine(machine);
-        std::vector<Anchor*> machine_anchors = machine->get_anchors();
-        for (size_t i = 0; i < machine_anchors.size(); ++i) {
-          Anchor* machine_anchor = machine_anchors[i];
-          for (size_t j = 0; j < machine_anchor->m_pipes.size(); ++j) {
-            std::shared_ptr<Pipe> child_pipe = machine_anchor->m_pipes[j];
-            m_pipe_manager.remove_pipe(child_pipe);
-
-            if (child_pipe != nullptr) {
-              Anchor* begin = child_pipe->begin_anchor;
-              Anchor* end = child_pipe->end_anchor;
-              {
-                std::vector<std::shared_ptr<Pipe>> pipes = begin->m_pipes;
-                pipes.erase(remove(pipes.begin(), pipes.end(), pipe),
-                            pipes.end());
-                std::vector<Anchor*> anchors = begin->m_piped_anchors;
-                anchors.erase(remove(anchors.begin(), anchors.end(), end),
-                              anchors.end());
-              }
-              {
-                std::vector<std::shared_ptr<Pipe>> pipes = end->m_pipes;
-                pipes.erase(remove(pipes.begin(), pipes.end(), pipe),
-                            pipes.end());
-                std::vector<Anchor*> anchors = end->m_piped_anchors;
-                anchors.erase(remove(anchors.begin(), anchors.end(), begin),
-                              anchors.end());
-              }
-            }
-          }
-        }
-
-        goto OUTSIDE;
-      }
-    OUTSIDE:;
+      // TODO: delete machine or pipe
     }
-
-    --m_stats.design_time;
   }
+
   if (m_mode == MODE_EVALUATE) {
     std::ostringstream status_stream;
     status_stream << "Evaluating... : " << std::setprecision(2) << std::fixed
@@ -352,11 +249,12 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
     m_mode_state.Evaluate.time_count++;
     if (m_mode_state.Evaluate.time_count <= 60 * 3) {
-      m_machine_manager.evaluate(&m_stats, m_rng);
+      // m_machine_manager.evaluate(&m_stats, m_rng);
     } else {
       return new ResultState(m_stats);
     }
   }
+
   if (m_mode == MODE_RECIPE) {
     draw_manager->draw_clear_box(20, 4, 80, 20);
     draw_manager->draw_line_box(20, 4, 80, 20);
@@ -386,6 +284,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
     draw_manager->draw_label(52, 16, "Output : Chip");
   }
 
+  // timer
   std::ostringstream time_stream;
   time_stream << "Time : " << (m_stats.design_time / 60) << ":" << std::setw(2)
               << std::setfill('0') << (m_stats.design_time % 60);
@@ -396,7 +295,8 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
                               draw_manager->get_height() - 2);
-  draw_manager->draw_label_box(1, 1, get_name());
+  draw_manager->draw_label_box(1, 1, "IN-GAME");
+
   draw_manager->present();
 
   if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
@@ -408,12 +308,9 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
 // RESULT STATE
 
-ResultState::ResultState(EvaluateContext stats)
-    : State::State(), m_stats(stats) {}
+ResultState::ResultState(const EvaluateContext stats) : m_stats(stats) {}
 
 ResultState::~ResultState() = default;
-
-std::string ResultState::get_name() { return "Result"; }
 
 // ゲームの結果標示、処理は雑
 State* ResultState::update(DrawManagerBase* draw_manager) {
@@ -421,12 +318,14 @@ State* ResultState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->draw_label_box(30, 10, "Game Result");
 
+  // time
   std::ostringstream time_stream;
   time_stream << "Time : " << (m_stats.design_time / 60) << ":" << std::setw(2)
               << std::setfill('0') << (m_stats.design_time % 60) << " / 60:00";
   std::string time = time_stream.str();
   draw_manager->draw_label(30, 14, time);
 
+  // score
   bool is_perfect = true;
   bool is_bad_inv = false;
   float score_value = 0.0f;
@@ -449,6 +348,7 @@ State* ResultState::update(DrawManagerBase* draw_manager) {
   std::string score = score_stream.str();
   draw_manager->draw_label(30, 12, score);
 
+  // grade
   if (!is_bad_inv)
     draw_manager->draw_label(43, 10, "Bad...");
   else if (!is_perfect)
@@ -456,9 +356,11 @@ State* ResultState::update(DrawManagerBase* draw_manager) {
   else
     draw_manager->draw_label(43, 10, "Perfect!!!");
 
+  // frame
   draw_manager->draw_line_box(0, 0, draw_manager->get_width(),
                               draw_manager->get_height() - 2);
-  draw_manager->draw_label_box(1, 1, get_name());
+  draw_manager->draw_label_box(1, 1, "Result");
+
   draw_manager->present();
 
   draw_manager->capture_input();

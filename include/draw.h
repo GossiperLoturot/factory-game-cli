@@ -9,8 +9,8 @@ namespace factory_game {
 
 class DrawManagerBase {
  public:
-  DrawManagerBase() = default;
-  virtual ~DrawManagerBase() = default;
+  DrawManagerBase();
+  virtual ~DrawManagerBase();
 
   virtual int get_width() = 0;
   virtual int get_height() = 0;

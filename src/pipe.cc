@@ -6,25 +6,25 @@ namespace factory_game {
 
 // SPATIAL IDX
 
-PipeSpatialIdx::PipeSpatialIdx(std::unordered_map<glm::ivec2, std::shared_ptr<Pipe>>& spatial_idx, std::shared_ptr<Pipe>& cursor) : m_spatial_idx(spatial_idx), m_cursor(cursor) {}
+PipeSpatialIdx::PipeSpatialIdx(
+    std::unordered_map<glm::ivec2, std::shared_ptr<Pipe>>& spatial_idx,
+    std::shared_ptr<Pipe>& cursor)
+    : m_spatial_idx(spatial_idx), m_cursor(cursor) {}
 
 PipeSpatialIdx::~PipeSpatialIdx() = default;
 
-void PipeSpatialIdx::Write(glm::ivec2 point) {
+void PipeSpatialIdx::Write(const glm::ivec2 point) const {
   m_spatial_idx.insert_or_assign(point, m_cursor);
 }
 
 // PIPE
 
-Pipe::Pipe(glm::ivec2 begin, glm::ivec2 end, Anchor* begin_anchor, Anchor* end_anchor)
-    : begin(begin),
-      end(end),
-      begin_anchor(begin_anchor),
-      end_anchor(end_anchor) {}
+Pipe::Pipe(const glm::ivec2 begin, const glm::ivec2 end)
+    : begin(begin), end(end) {}
 
 Pipe::~Pipe() = default;
 
-void Pipe::draw(DrawManagerBase* draw_manager) {
+void Pipe::draw(DrawManagerBase* draw_manager) const {
   if (begin.x == end.x || begin.y == end.y) {
     draw_manager->draw_hv_line(begin.x, begin.y, end.x, end.y);
   } else {
@@ -33,13 +33,13 @@ void Pipe::draw(DrawManagerBase* draw_manager) {
   }
 }
 
-void Pipe::build_spatial_idx(PipeSpatialIdx writer) {
+void Pipe::build_spatial_idx(const PipeSpatialIdx& writer) const {
   // 垂直パイプ
   if (begin.x == end.x) {
     int y0 = begin.y, y1 = end.y;
     if (y0 > y1) std::swap(y0, y1);
 
-    int x = begin.x;
+    const int x = begin.x;
     for (int y = y0; y <= y1; ++y) writer.Write(glm::ivec2(x, y));
   }
 
@@ -48,7 +48,7 @@ void Pipe::build_spatial_idx(PipeSpatialIdx writer) {
     int x0 = begin.x, x1 = end.x;
     if (x0 > x1) std::swap(x0, x1);
 
-    int y = begin.y;
+    const int y = begin.y;
     for (int x = x0; x <= x1; ++x) writer.Write(glm::ivec2(x, y));
   }
 
@@ -58,25 +58,25 @@ void Pipe::build_spatial_idx(PipeSpatialIdx writer) {
     int y0 = begin.y, y1 = end.y;
     if (y0 > y1) std::swap(y0, y1);
 
-    int x = begin.x;
+    const int x = begin.x;
     for (int v = y0; v <= y1; ++v) writer.Write(glm::ivec2(x, v));
 
     // 水平部分
     int x0 = begin.x, x1 = end.x;
     if (x0 > x1) std::swap(x0, x1);
 
-    int y = end.y;
+    const int y = end.y;
     for (int u = x0; u <= x1; ++u) writer.Write(glm::ivec2(u, y));
   }
 }
 
 // PIPE MANAGER
 
-PipeManager::PipeManager() : m_pipes(), m_spatial_idx() {}
+PipeManager::PipeManager() {}
 
 PipeManager::~PipeManager() = default;
 
-void PipeManager::add_pipe(std::shared_ptr<Pipe> pipe) {
+void PipeManager::add_pipe(const std::shared_ptr<Pipe>& pipe) {
   m_pipes.insert(pipe);
   build_spatial_idx();
 }
@@ -90,19 +90,19 @@ void PipeManager::build_spatial_idx() {
   }
 }
 
-void PipeManager::remove_pipe(std::shared_ptr<Pipe> pipe) {
+void PipeManager::remove_pipe(const std::shared_ptr<Pipe>& pipe) {
   m_pipes.erase(pipe);
   build_spatial_idx();
 }
 
-std::shared_ptr<Pipe> PipeManager::find_pipe(glm::ivec2 point) {
-  auto it = m_spatial_idx.find(point);
+std::shared_ptr<Pipe> PipeManager::find_pipe(const glm::ivec2 point) {
+  const auto it = m_spatial_idx.find(point);
   if (it == m_spatial_idx.end()) return nullptr;
   return it->second;
 }
 
-void PipeManager::draw(DrawManagerBase* draw_manager) {
-  for (auto pipe : m_pipes) {
+void PipeManager::draw(DrawManagerBase* draw_manager) const {
+  for (const auto pipe : m_pipes) {
     pipe->draw(draw_manager);
   }
 }
