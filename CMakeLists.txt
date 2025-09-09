@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 4.0)
 project(factory_game)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # ccls
 
-file(GLOB HEADER "src/*.h")
+file(GLOB HEADER "include/*.h")
 file(GLOB SOURCE "src/*.cc")
 
 add_executable(factory_game ${HEADER} ${SOURCE})

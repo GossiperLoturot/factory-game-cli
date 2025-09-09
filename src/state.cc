@@ -27,16 +27,16 @@ State* TitleState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->capture_input();
 
-  if (draw_manager->handle_input_keycode(VK_RETURN)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_RETURN)) {
     return new InGameState(1);
   }
 
-  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_ESCAPE)) {
     return nullptr;
   }
 
   int x, y;
-  if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x, y)) {
+  if (draw_manager->handle_input_mouse(MOUSE_LCLICK, x, y)) {
     return new InGameState(1);
   }
 
@@ -107,7 +107,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->capture_input();
 
-  if (draw_manager->handle_input_keycode(VK_TAB)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_TAB)) {
     if (m_mode == MODE_PLACE_PIPE || m_mode == MODE_LINK_PIPE) {
       m_mode = MODE_PLACE_MACHINE;
       m_mode_state.PlaceMachine = {MACHINE_ELECTROLYZER};
@@ -117,7 +117,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
     }
   }
 
-  if (draw_manager->handle_input_keycode(VK_RETURN)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_RETURN)) {
     if (m_mode != MODE_EVALUATE) {
       m_mode = MODE_EVALUATE;
       m_mode_state.Evaluate = {0};
@@ -141,8 +141,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
                                "Mode, Enter: Submit, Esc: Quit, R: Recipe");
 
       int x, y;
-      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
-                                           y)) {
+      if (draw_manager->handle_input_mouse(MOUSE_LCLICK, x, y)) {
         const auto point = glm::ivec2(x, y);
 
         // TODO
@@ -159,8 +158,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
                                "X");
 
       int x, y;
-      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
-                                           y)) {
+      if (draw_manager->handle_input_mouse(MOUSE_LCLICK, x, y)) {
         const auto point = glm::ivec2(x, y);
 
         // TODO
@@ -188,7 +186,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
                                  "[Assembler]");
       }
 
-      if (draw_manager->handle_input_keycode(VK_SPACE)) {
+      if (draw_manager->handle_input_keycode(KEYCODE_SPACE)) {
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
           m_mode_state.PlaceMachine.machine = MACHINE_CUTTER;
         } else if (m_mode_state.PlaceMachine.machine == MACHINE_CUTTER) {
@@ -201,8 +199,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
       }
 
       int x, y;
-      if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x,
-                                           y)) {
+      if (draw_manager->handle_input_mouse(MOUSE_LCLICK, x, y)) {
         const auto point = glm::ivec2(x, y);
 
         if (m_mode_state.PlaceMachine.machine == MACHINE_ELECTROLYZER) {
@@ -227,7 +224,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
   if (m_mode != MODE_EVALUATE && m_mode != MODE_RECIPE) {
     int x, y;
-    if (draw_manager->handle_input_mouse(RIGHTMOST_BUTTON_PRESSED, x, y)) {
+    if (draw_manager->handle_input_mouse(MOUSE_RCLICK, x, y)) {
       if (m_mode == MODE_LINK_PIPE) {
         m_mode = MODE_PLACE_PIPE;
         m_mode_state.PlacePipe = {};
@@ -299,7 +296,7 @@ State* InGameState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->present();
 
-  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_ESCAPE)) {
     return new ResultState(m_stats);
   }
 
@@ -334,7 +331,7 @@ State* ResultState::update(DrawManagerBase* draw_manager) {
     line_stream << item_to_string(m_stats.items[i]) << " : "
                 << m_stats.counts[i] << " unit.";
     std::string line = line_stream.str();
-    draw_manager->draw_label(30, 16 + static_cast<SHORT>(i), line);
+    draw_manager->draw_label(30, 16 + static_cast<int>(i), line);
 
     is_perfect &= (m_stats.counts[i] > 0);
     is_bad_inv |= (m_stats.counts[i] > 0);
@@ -365,19 +362,19 @@ State* ResultState::update(DrawManagerBase* draw_manager) {
 
   draw_manager->capture_input();
 
-  if (draw_manager->handle_input_keycode(VK_RETURN)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_RETURN)) {
     if (m_stats.stage == 1 && is_bad_inv)
       return new InGameState(2);
     else
       return nullptr;
   }
 
-  if (draw_manager->handle_input_keycode(VK_ESCAPE)) {
+  if (draw_manager->handle_input_keycode(KEYCODE_RETURN)) {
     return nullptr;
   }
 
   int x, y;
-  if (draw_manager->handle_input_mouse(FROM_LEFT_1ST_BUTTON_PRESSED, x, y)) {
+  if (draw_manager->handle_input_mouse(MOUSE_LCLICK, x, y)) {
     if (m_stats.stage == 1 && is_bad_inv)
       return new InGameState(2);
     else

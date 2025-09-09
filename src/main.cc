@@ -4,7 +4,12 @@
 namespace factory_game {
 
 int main() {
+#if defined(WIN32)
   DrawManagerBase* draw_manager = new DrawManagerWindows();
+#endif
+#if defined(__linux__)
+  DrawManagerBase* draw_manager = new DrawManagerLinux();
+#endif
   State* state = new TitleState();
 
   do {
