@@ -1,3 +1,2 @@
-.idea
-.ccls-cache
-build
+/build
+/.cache

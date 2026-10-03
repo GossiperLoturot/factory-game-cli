@@ -1,188 +1,262 @@
 #include "machine.h"
 
-#include <algorithm>
-
-namespace factory_game {
-
-// SPATIAL IDX
-
-MachineSpatialIdx::MachineSpatialIdx(
-    std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& spatial_idx,
-    std::shared_ptr<Machine>& cursor)
-    : m_spatial_idx(spatial_idx), m_cursor(cursor) {}
-
-MachineSpatialIdx::~MachineSpatialIdx() = default;
-
-void MachineSpatialIdx::Write(const glm::ivec2 point) const {
-  m_spatial_idx.insert_or_assign(point, m_cursor);
-}
-
 // BASE MACHINE
 
-Machine::Machine(const glm::ivec2 point) : m_point(point) {}
+MachineBase::MachineBase(glm::ivec2 point) : m_point{point} {
+}
 
-Machine::~Machine() = default;
+MachineBase::~MachineBase() = default;
 
 // INPUT DUCT
 
-InputDuct::InputDuct(const glm::ivec2 point, const Item item)
-    : Machine(point), item(item) {}
+InputDuct::InputDuct(glm::ivec2 point, Item item) : MachineBase{point}, item{item} {
+}
 
 InputDuct::~InputDuct() = default;
 
-bool InputDuct::is_breakable() { return false; }
-
-void InputDuct::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x + 2, m_point.y - 1, item_to_string(item));
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Input]]");
-  draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
+bool InputDuct::is_breakable() {
+  return false;
 }
 
-void InputDuct::build_spatial_idx(MachineSpatialIdx writer) {}
+void InputDuct::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x + 2, m_point.y - 1, item_to_string(item));
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Input]]");
+  draw_manager.draw_label(m_point.x + 5, m_point.y + 1, "O");
+}
+
+std::vector<glm::ivec4> InputDuct::rects() {
+  return std::vector<glm::ivec4>{};
+}
+
+std::vector<glm::ivec2> InputDuct::ports() {
+  glm::ivec2 port{m_point.x + 5, m_point.y + 1};
+  return std::vector<glm::ivec2>{port};
+}
 
 // OUTPUT DUCT
 
-OutputDuct::OutputDuct(const glm::ivec2 point, const Item item)
-    : Machine(point), item(item) {}
+OutputDuct::OutputDuct(glm::ivec2 point, Item item) : MachineBase{point}, item{item} {
+}
 
 OutputDuct::~OutputDuct() = default;
 
-bool OutputDuct::is_breakable() { return false; }
-
-void OutputDuct::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x + 2, m_point.y + 1, item_to_string(item));
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Output]]");
-  draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
+bool OutputDuct::is_breakable() {
+  return false;
 }
 
-void OutputDuct::build_spatial_idx(MachineSpatialIdx writer) {}
+void OutputDuct::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x + 2, m_point.y + 1, item_to_string(item));
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Output]]");
+  draw_manager.draw_label(m_point.x + 5, m_point.y - 1, "I");
+}
+
+std::vector<glm::ivec4> OutputDuct::rects() {
+  return std::vector<glm::ivec4>{};
+}
+
+std::vector<glm::ivec2> OutputDuct::ports() {
+  glm::ivec2 port{m_point.x + 5, m_point.y - 1};
+  return std::vector<glm::ivec2>{port};
+}
 
 // ELECTROLYZER MACHINE
 
-Electrolyzer::Electrolyzer(const glm::ivec2 point) : Machine(point) {}
+Electrolyzer::Electrolyzer(glm::ivec2 point) : MachineBase{point} {
+}
 
 Electrolyzer::~Electrolyzer() = default;
 
-bool Electrolyzer::is_breakable() { return true; }
-
-void Electrolyzer::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Electrolyzer]]");
-  draw_manager->draw_label(m_point.x + 7, m_point.y - 1, "I");
-  draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O1");
-  draw_manager->draw_label(m_point.x + 10, m_point.y + 1, "O2");
+bool Electrolyzer::is_breakable() {
+  return true;
 }
 
-void Electrolyzer::build_spatial_idx(const MachineSpatialIdx writer) {
-  for (int y = m_point.y; y < m_point.y + 1; ++y) {
-    for (int x = m_point.x; x < m_point.x + 15; ++x) {
-      writer.Write(glm::ivec2(x, y));
-    }
-  }
+void Electrolyzer::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Electrolyzer]]");
+  draw_manager.draw_label(m_point.x + 7, m_point.y - 1, "I");
+  draw_manager.draw_label(m_point.x + 5, m_point.y + 1, "O1");
+  draw_manager.draw_label(m_point.x + 10, m_point.y + 1, "O2");
+}
+
+std::vector<glm::ivec4> Electrolyzer::rects() {
+  glm::ivec4 bb{m_point.x, m_point.y, m_point.x + 15, m_point.y + 1};
+  return std::vector<glm::ivec4>{bb};
+}
+
+std::vector<glm::ivec2> Electrolyzer::ports() {
+  glm::ivec2 input_port{m_point.x + 7, m_point.y - 1};
+  glm::ivec2 output_port0{m_point.x + 5, m_point.y + 1};
+  glm::ivec2 output_port1{m_point.x + 10, m_point.y + 1};
+  return std::vector<glm::ivec2>{input_port, output_port0, output_port1};
 }
 
 // CUTTER MACHINE
 
-Cutter::Cutter(const glm::ivec2 point) : Machine(point) {}
+Cutter::Cutter(glm::ivec2 point) : MachineBase{point} {
+}
 
 Cutter::~Cutter() = default;
 
-bool Cutter::is_breakable() { return true; }
-
-void Cutter::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Cutter]]");
-  draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
-  draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
+bool Cutter::is_breakable() {
+  return true;
 }
 
-void Cutter::build_spatial_idx(const MachineSpatialIdx writer) {
-  for (int y = m_point.y; y < m_point.y + 1; ++y) {
-    for (int x = m_point.x; x < m_point.x + 15; ++x) {
-      writer.Write(glm::ivec2(x, y));
-    }
-  }
+void Cutter::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Cutter]]");
+  draw_manager.draw_label(m_point.x + 5, m_point.y - 1, "I");
+  draw_manager.draw_label(m_point.x + 5, m_point.y + 1, "O");
+}
+
+std::vector<glm::ivec4> Cutter::rects() {
+  glm::ivec4 bb{m_point.x, m_point.y, m_point.x + 15, m_point.y + 1};
+  return std::vector<glm::ivec4>{bb};
+}
+
+std::vector<glm::ivec2> Cutter::ports() {
+  glm::ivec2 input_port{m_point.x + 5, m_point.y - 1};
+  glm::ivec2 output_port{m_point.x + 5, m_point.y + 1};
+  return std::vector<glm::ivec2>{input_port, output_port};
 }
 
 // LAZER MACHINE
 
-Laser::Laser(const glm::ivec2 point) : Machine(point) {}
+Laser::Laser(glm::ivec2 point) : MachineBase{point} {
+}
 
 Laser::~Laser() = default;
 
-bool Laser::is_breakable() { return true; }
-
-void Laser::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Laser]]");
-  draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I");
-  draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
+bool Laser::is_breakable() {
+  return true;
 }
 
-void Laser::build_spatial_idx(const MachineSpatialIdx writer) {
-  for (int y = m_point.y; y < m_point.y + 1; ++y) {
-    for (int x = m_point.x; x < m_point.x + 15; ++x) {
-      writer.Write(glm::ivec2(x, y));
-    }
-  }
+void Laser::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Laser]]");
+  draw_manager.draw_label(m_point.x + 5, m_point.y - 1, "I");
+  draw_manager.draw_label(m_point.x + 5, m_point.y + 1, "O");
+}
+
+std::vector<glm::ivec4> Laser::rects() {
+  glm::ivec4 bb{m_point.x, m_point.y, m_point.x + 15, m_point.y + 1};
+  return std::vector<glm::ivec4>{bb};
+}
+
+std::vector<glm::ivec2> Laser::ports() {
+  glm::ivec2 input_port{m_point.x + 5, m_point.y - 1};
+  glm::ivec2 output_port{m_point.x + 5, m_point.y + 1};
+  return std::vector<glm::ivec2>{input_port, output_port};
 }
 
 // ASSEMBLER MACHINE
 
-Assembler::Assembler(const glm::ivec2 point) : Machine(point) {}
+Assembler::Assembler(glm::ivec2 point) : MachineBase{point} {
+}
 
 Assembler::~Assembler() = default;
 
-bool Assembler::is_breakable() { return true; }
-
-void Assembler::draw(DrawManagerBase* draw_manager) {
-  draw_manager->draw_label(m_point.x, m_point.y, "[[Assembler]]");
-  draw_manager->draw_label(m_point.x + 2, m_point.y - 1, "I1");
-  draw_manager->draw_label(m_point.x + 5, m_point.y - 1, "I2");
-  draw_manager->draw_label(m_point.x + 8, m_point.y - 1, "I3");
-  draw_manager->draw_label(m_point.x + 5, m_point.y + 1, "O");
+bool Assembler::is_breakable() {
+  return true;
 }
 
-void Assembler::build_spatial_idx(const MachineSpatialIdx writer) {
-  for (int y = m_point.y; y < m_point.y + 1; ++y) {
-    for (int x = m_point.x; x < m_point.x + 15; ++x) {
-      writer.Write(glm::ivec2(x, y));
-    }
-  }
+void Assembler::draw(DrawManagerBase& draw_manager) {
+  draw_manager.draw_label(m_point.x, m_point.y, "[[Assembler]]");
+  draw_manager.draw_label(m_point.x + 2, m_point.y - 1, "I1");
+  draw_manager.draw_label(m_point.x + 5, m_point.y - 1, "I2");
+  draw_manager.draw_label(m_point.x + 8, m_point.y - 1, "I3");
+  draw_manager.draw_label(m_point.x + 5, m_point.y + 1, "O");
+}
+
+std::vector<glm::ivec4> Assembler::rects() {
+  glm::ivec4 bb{m_point.x, m_point.y, m_point.x + 15, m_point.y + 1};
+  return std::vector<glm::ivec4>{bb};
+}
+
+std::vector<glm::ivec2> Assembler::ports() {
+  glm::ivec2 input_port0{m_point.x + 2, m_point.y - 1};
+  glm::ivec2 input_port1{m_point.x + 5, m_point.y - 1};
+  glm::ivec2 input_port2{m_point.x + 8, m_point.y - 1};
+  glm::ivec2 output_port{m_point.x + 5, m_point.y + 1};
+  return std::vector<glm::ivec2>{input_port0, input_port1, input_port2, output_port};
 }
 
 // MACHINE MANAGER
 
-MachineManager::MachineManager() {}
+MachineManager::MachineManager() : m_machines{}, m_spatial_idx{}, m_port_spatial_idx{} {
+}
 
 MachineManager::~MachineManager() = default;
 
-void MachineManager::add_machine(const std::shared_ptr<Machine>& machine) {
-  m_machines.insert(machine);
-  build_spatial_idx();
-}
-
 void MachineManager::build_spatial_idx() {
   m_spatial_idx.clear();
+  m_port_spatial_idx.clear();
 
-  for (auto machine : m_machines) {
-    const auto writer = MachineSpatialIdx(m_spatial_idx, machine);
-    machine->build_spatial_idx(writer);
+  for (int machine_id = 0; machine_id < m_machines.size(); ++machine_id) {
+    const auto& machine_ptr = m_machines.at(machine_id);
+    if (machine_ptr == nullptr) {
+      continue;
+    }
+    MachineBase& machine = *machine_ptr;
+
+    for (glm::ivec4 rect : machine.rects()) {
+      for (int x = rect.x; x < rect.z; ++x) {
+        for (int y = rect.y; y < rect.w; ++y) {
+          m_spatial_idx.insert_or_assign(glm::ivec2{x, y}, machine_id);
+        }
+      }
+    }
+
+    std::vector<glm::ivec2> ports = machine.ports();
+    for (int j = 0; j < ports.size(); ++j) {
+      m_port_spatial_idx.insert_or_assign(ports.at(j), std::make_pair(machine_id, j));
+    }
   }
 }
 
-void MachineManager::remove_machine(const std::shared_ptr<Machine>& machine) {
-  m_machines.erase(machine);
+int MachineManager::add_machine(std::unique_ptr<MachineBase> machine) {
+  int machine_id = m_machines.size();
+  m_machines.push_back(std::move(machine));
   build_spatial_idx();
+  return machine_id;
 }
 
-std::shared_ptr<Machine> MachineManager::find_machine(const glm::ivec2 point) {
-  const auto it = m_spatial_idx.find(point);
-  if (it == m_spatial_idx.end()) return nullptr;
-  return it->second;
+MachineBase& MachineManager::get_machine(int machine_id) {
+  const auto& machine_ptr = m_machines.at(machine_id);
+  if (machine_ptr == nullptr) {
+    throw std::runtime_error("Machine with id " + std::to_string(machine_id) + " does not exist.");
+  }
+  return *machine_ptr;
 }
 
-void MachineManager::draw(DrawManagerBase* draw_manager) const {
-  for (const auto machine : m_machines) {
-    machine->draw(draw_manager);
+std::unique_ptr<MachineBase> MachineManager::remove_machine(int machine_id) {
+  auto machine_ptr = std::move(m_machines.at(machine_id));
+  build_spatial_idx();
+  return machine_ptr;
+}
+
+bool MachineManager::find_machine(glm::ivec2 point, int& machine_id) {
+  auto it = m_spatial_idx.find(point);
+  if (it == m_spatial_idx.end()) {
+    return false;
+  }
+  machine_id = it->second;
+  return true;
+}
+
+bool MachineManager::find_machine_port(glm::ivec2 point, int& machine_id, int& port_id) {
+  auto it = m_port_spatial_idx.find(point);
+  if (it == m_port_spatial_idx.end()) {
+    return false;
+  }
+  machine_id = it->second.first;
+  port_id = it->second.second;
+  return true;
+}
+
+void MachineManager::draw(DrawManagerBase& draw_manager) {
+  for (const auto& machine_ptr : m_machines) {
+    if (machine_ptr == nullptr) {
+      continue;
+    }
+    MachineBase& machine = *machine_ptr;
+
+    machine.draw(draw_manager);
   }
 }
-
-}  // namespace factory_game

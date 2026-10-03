@@ -1,31 +1,31 @@
-#pragma once
+#ifndef _FOUNDATION_H
+#define _FOUNDATION_H
 
-#include <string>
+#include <string_view>
 #include <vector>
 
-namespace factory_game {
+enum class Item {
+  WATER,
+  HYDROGEN,
+  OXYGEN,
 
-enum Item {
-  ITEM_WATER,
-  ITEM_HYDROGEN,
-  ITEM_OXYGEN,
-
-  ITEM_SILICON,
-  ITEM_SILICON_WAFER,
-  ITEM_CIRCUIT_WAFER,
-  ITEM_CIRCUIT,
-  ITEM_SOLDERING_IRON,
-  ITEM_CIRCUIT_BOARD,
-  ITEM_CHIP,
+  SILICON,
+  SILICON_WAFER,
+  CIRCUIT_WAFER,
+  CIRCUIT,
+  SOLDERING_IRON,
+  CIRCUIT_BOARD,
+  CHIP,
 };
 
-std::string item_to_string(Item item);
+std::string_view item_to_string(Item item);
 
-struct EvaluateContext {
+class EvaluateContext {
+ public:
   int stage;
   int design_time;
   std::vector<Item> items;
   std::vector<int> counts;
 };
 
-}  // namespace factory_game
+#endif  // _FOUNDATION_H

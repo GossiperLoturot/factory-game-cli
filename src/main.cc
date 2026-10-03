@@ -1,19 +1,21 @@
 ﻿#include "draw.h"
 #include "state.h"
 
-namespace factory_game {
-
 int main() {
+  // Windows
 #if defined(WIN32)
-  DrawManagerBase* draw_manager = new DrawManagerWindows();
+  auto draw_manager = std::make_unique<DrawManagerWindows>();
 #endif
+
+  // Linux
 #if defined(__linux__)
-  DrawManagerBase* draw_manager = new DrawManagerLinux();
+  auto draw_manager = std::make_unique<DrawManagerLinux>();
 #endif
+
   State* state = new TitleState();
 
   do {
-    State* new_state = state->update(draw_manager);
+    State* new_state = state->update(*draw_manager);
 
     if (new_state != state) {
       delete state;
@@ -23,7 +25,3 @@ int main() {
 
   return EXIT_SUCCESS;
 }
-
-}  // namespace factory_game
-
-int main() { return factory_game::main(); }

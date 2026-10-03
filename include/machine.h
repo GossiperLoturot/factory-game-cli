@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _MACHINE_H
+#define _MACHINE_H
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -6,112 +7,100 @@
 #include <glm/vec2.hpp>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "draw.h"
 #include "foundation.h"
 
-namespace factory_game {
-
-class Machine;  // for pointer reference
-
-class MachineSpatialIdx {
- public:
-  MachineSpatialIdx(
-      std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& spatial_idx,
-      std::shared_ptr<Machine>& cursor);
-  ~MachineSpatialIdx();
-
-  void Write(glm::ivec2 point) const;
-
- private:
-  std::unordered_map<glm::ivec2, std::shared_ptr<Machine>>& m_spatial_idx;
-  std::shared_ptr<Machine>& m_cursor;
-};
-
-class Machine {
+class MachineBase {
  public:
   glm::ivec2 m_point;
 
-  Machine(glm::ivec2 point);
-  virtual ~Machine();
+  MachineBase(glm::ivec2 point);
+  virtual ~MachineBase();
 
   virtual bool is_breakable() = 0;
 
-  virtual void draw(DrawManagerBase* draw_manager) = 0;
-  virtual void build_spatial_idx(MachineSpatialIdx writer) = 0;
+  virtual void draw(DrawManagerBase& draw_manager) = 0;
+  virtual std::vector<glm::ivec4> rects() = 0;
+  virtual std::vector<glm::ivec2> ports() = 0;
 };
 
-class InputDuct : public Machine {
+class InputDuct : public MachineBase {
  public:
   InputDuct(glm::ivec2 point, Item item);
   ~InputDuct() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 
  private:
   Item item;
 };
 
-class OutputDuct : public Machine {
+class OutputDuct : public MachineBase {
  public:
   OutputDuct(glm::ivec2 point, Item item);
   ~OutputDuct() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 
  private:
   Item item;
 };
 
-class Electrolyzer : public Machine {
+class Electrolyzer : public MachineBase {
  public:
   Electrolyzer(glm::ivec2 point);
   ~Electrolyzer() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 };
 
-class Cutter : public Machine {
+class Cutter : public MachineBase {
  public:
   Cutter(glm::ivec2 point);
   ~Cutter() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 };
 
-class Laser : public Machine {
+class Laser : public MachineBase {
  public:
   Laser(glm::ivec2 point);
   ~Laser() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 };
 
-class Assembler : public Machine {
+class Assembler : public MachineBase {
  public:
   explicit Assembler(glm::ivec2 point);
   ~Assembler() override;
 
   bool is_breakable() override;
 
-  void draw(DrawManagerBase* draw_manager) override;
-  void build_spatial_idx(MachineSpatialIdx writer) override;
+  void draw(DrawManagerBase& draw_manager) override;
+  std::vector<glm::ivec4> rects() override;
+  std::vector<glm::ivec2> ports() override;
 };
 
 class MachineManager {
@@ -120,14 +109,17 @@ class MachineManager {
   ~MachineManager();
 
   void build_spatial_idx();
-  void add_machine(const std::shared_ptr<Machine>& machine);
-  void remove_machine(const std::shared_ptr<Machine>& machine);
-  std::shared_ptr<Machine> find_machine(glm::ivec2 point);
-  void draw(DrawManagerBase* draw_manager) const;
+  int add_machine(std::unique_ptr<MachineBase> machine);
+  std::unique_ptr<MachineBase> remove_machine(int machine_id);
+  MachineBase& get_machine(int machine_id);
+  bool find_machine(glm::ivec2 point, int& machine_id);
+  bool find_machine_port(glm::ivec2 point, int& machine_id, int& port_id);
+  void draw(DrawManagerBase& draw_manager);
 
  private:
-  std::unordered_set<std::shared_ptr<Machine>> m_machines;
-  std::unordered_map<glm::ivec2, std::shared_ptr<Machine>> m_spatial_idx;
+  std::vector<std::unique_ptr<MachineBase>> m_machines;
+  std::unordered_map<glm::ivec2, int> m_spatial_idx;
+  std::unordered_map<glm::ivec2, std::pair<int, int>> m_port_spatial_idx;
 };
 
-}  // namespace factory_game
+#endif  // _MACHINE_H

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PIPE_H
+#define _PIPE_H
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -6,27 +7,8 @@
 #include <glm/vec2.hpp>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "draw.h"
-
-namespace factory_game {
-
-class Pipe;  // for pointer reference
-
-class PipeSpatialIdx {
- public:
-  PipeSpatialIdx(
-      std::unordered_map<glm::ivec2, std::shared_ptr<Pipe>>& spatial_idx,
-      std::shared_ptr<Pipe>& cursor);
-  ~PipeSpatialIdx();
-
-  void Write(glm::ivec2 point) const;
-
- private:
-  std::unordered_map<glm::ivec2, std::shared_ptr<Pipe>>& m_spatial_idx;
-  std::shared_ptr<Pipe>& m_cursor;
-};
 
 class Pipe {
  public:
@@ -36,8 +18,8 @@ class Pipe {
   Pipe(glm::ivec2 begin, glm::ivec2 end);
   ~Pipe();
 
-  void draw(DrawManagerBase* draw_manager) const;
-  void build_spatial_idx(const PipeSpatialIdx& writer) const;
+  std::vector<glm::ivec4> rects();
+  void draw(DrawManagerBase& draw_manager);
 };
 
 class PipeManager {
@@ -46,14 +28,15 @@ class PipeManager {
   ~PipeManager();
 
   void build_spatial_idx();
-  void add_pipe(const std::shared_ptr<Pipe>& pipe);
-  void remove_pipe(const std::shared_ptr<Pipe>& point);
-  std::shared_ptr<Pipe> find_pipe(glm::ivec2 point);
-  void draw(DrawManagerBase* draw_manager) const;
+  int add_pipe(std::unique_ptr<Pipe> pipe);
+  std::unique_ptr<Pipe> remove_pipe(int pipe_id);
+  Pipe& get_pipe(int pipe_id);
+  bool find_pipe(glm::ivec2 point, int& pipe_id);
+  void draw(DrawManagerBase& draw_manager);
 
  private:
-  std::unordered_set<std::shared_ptr<Pipe>> m_pipes;
-  std::unordered_map<glm::ivec2, std::shared_ptr<Pipe>> m_spatial_idx;
+  std::vector<std::unique_ptr<Pipe>> m_pipes;
+  std::unordered_map<glm::ivec2, int> m_spatial_idx;
 };
 
-}  // namespace factory_game
+#endif  // _PIPE_H

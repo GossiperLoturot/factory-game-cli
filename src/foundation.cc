@@ -1,34 +1,30 @@
 #include "foundation.h"
 
-namespace factory_game {
-
-std::string item_to_string(const Item item) {
+std::string_view item_to_string(Item item) {
   switch (item) {
-    case ITEM_WATER:
+    case Item::WATER:
       return "Water";
-    case ITEM_HYDROGEN:
+    case Item::HYDROGEN:
       return "Hydrogen";
-    case ITEM_OXYGEN:
+    case Item::OXYGEN:
       return "Oxygen";
 
-    case ITEM_SILICON:
+    case Item::SILICON:
       return "Silicon";
-    case ITEM_SILICON_WAFER:
+    case Item::SILICON_WAFER:
       return "Silicon Wafer";
-    case ITEM_CIRCUIT_WAFER:
+    case Item::CIRCUIT_WAFER:
       return "Circuit Wafer";
-    case ITEM_CIRCUIT:
+    case Item::CIRCUIT:
       return "Circuit";
-    case ITEM_SOLDERING_IRON:
+    case Item::SOLDERING_IRON:
       return "Soldering Iron";
-    case ITEM_CIRCUIT_BOARD:
+    case Item::CIRCUIT_BOARD:
       return "Circuit Board";
-    case ITEM_CHIP:
+    case Item::CHIP:
       return "Chip";
 
     default:
       return "Unknown";
   }
 }
-
-}  // namespace factory_game

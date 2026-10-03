@@ -1,11 +1,8 @@
-#pragma once
+#ifndef _DRAW_H_
+#define _DRAW_H_
 
-#include <iostream>
-#include <string>
-#include <thread>
+#include <string_view>
 #include <vector>
-
-namespace factory_game {
 
 class DrawManagerBase {
  public:
@@ -28,8 +25,9 @@ class DrawManagerBase {
   virtual bool handle_input_mouse(int state, int& x, int& y) = 0;
 };
 
-#if defined(WIN32)
+// Windows
 
+#if defined(WIN32)
 #include "windows.h"
 
 #define KEYCODE_RETURN VK_RETURN
@@ -74,8 +72,9 @@ class DrawManagerWindows : public DrawManagerBase {
 };
 #endif
 
-#if defined(__linux__)
+// Linux
 
+#if defined(__linux__)
 #include <termios.h>
 #include <unistd.h>
 
@@ -117,4 +116,4 @@ class DrawManagerLinux : public DrawManagerBase {
 };
 #endif
 
-}  // namespace factory_game
+#endif  // _DRAW_H_
