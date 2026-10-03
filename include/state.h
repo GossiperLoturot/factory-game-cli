@@ -2,6 +2,7 @@
 #define _STATE_H
 
 #include <random>
+#include <variant>
 
 #include "draw.h"
 #include "machine.h"
@@ -14,29 +15,25 @@ enum class MachineKind {
   ASSEMBLER,
 };
 
-enum class Mode {
-  PLACE_PIPE,
-  LINK_PIPE,
-  PLACE_MACHINE,
-  EVALUATE,
-  RECIPE,
+struct PlacePipeSubState {};
+
+struct LinkPipeSubState {
+  glm::ivec2 m_point;
+  int m_machine_id;
+  int m_port_id;
 };
 
-union ModeState {
-  struct {
-  } PlacePipe;
-  struct {
-    glm::ivec2 point;
-    int machine_id;
-    int port_id;
-  } LinkPipe;
-  struct {
-    MachineKind machine;
-  } PlaceMachine;
-  struct {
-    int time_count;
-  } Evaluate;
+struct PlaceMachineSubState {
+  MachineKind m_machine;
 };
+
+struct EvaluateSubState {
+  int m_time_count;
+};
+
+struct RecipeSubState {};
+
+using SubState = std::variant<PlacePipeSubState, LinkPipeSubState, PlaceMachineSubState, EvaluateSubState, RecipeSubState>;
 
 class State {
  public:
@@ -64,9 +61,8 @@ class InGameState : public State {
  private:
   PipeManager m_pipe_manager;
   MachineManager m_machine_manager;
-  Mode m_mode;
-  ModeState m_mode_state;
-  std::default_random_engine m_rng;
+  SubState m_sub_state;
+  std::mt19937 m_rng;
   EvaluateContext m_stats;
 };
 

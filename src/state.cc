@@ -46,7 +46,7 @@ State* TitleState::update(DrawManagerBase& draw_manager) {
 
 // IN-GAME STATE
 
-InGameState::InGameState(int stage) : m_mode{Mode::PLACE_PIPE}, m_mode_state{}, m_rng{std::random_device()()}, m_stats{} {
+InGameState::InGameState(int stage) : m_sub_state{PlacePipeSubState{}}, m_rng{std::random_device{}()}, m_stats{} {
   m_stats.stage = stage;
   m_stats.design_time = 60 * 60;
 
@@ -95,196 +95,161 @@ State* InGameState::update(DrawManagerBase& draw_manager) {
   m_pipe_manager.draw(draw_manager);
   m_machine_manager.draw(draw_manager);
 
+  // # handling input
+
   draw_manager.capture_input();
 
   if (draw_manager.handle_input_keycode(KEYCODE_TAB)) {
-    if (m_mode == Mode::PLACE_PIPE || m_mode == Mode::LINK_PIPE) {
-      m_mode = Mode::PLACE_MACHINE;
-      m_mode_state.PlaceMachine = {MachineKind::ELECTROLYZER};
-    } else if (m_mode == Mode::PLACE_MACHINE) {
-      m_mode = Mode::PLACE_PIPE;
-      m_mode_state.PlacePipe = {};
+    if (std::get_if<PlacePipeSubState>(&m_sub_state)) {
+      m_sub_state.emplace<PlaceMachineSubState>(MachineKind::ELECTROLYZER);
+    } else if (std::get_if<LinkPipeSubState>(&m_sub_state)) {
+      m_sub_state.emplace<PlaceMachineSubState>(MachineKind::ELECTROLYZER);
+    } else if (std::get_if<PlaceMachineSubState>(&m_sub_state)) {
+      m_sub_state.emplace<PlacePipeSubState>();
     }
   }
 
   if (draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
-    if (m_mode != Mode::EVALUATE) {
-      m_mode = Mode::EVALUATE;
-      m_mode_state.Evaluate = {0};
+    if (!std::get_if<EvaluateSubState>(&m_sub_state)) {
+      m_sub_state.emplace<EvaluateSubState>(0);
     }
   }
 
   if (draw_manager.handle_input_keycode('r')) {
-    if (m_mode != Mode::EVALUATE) {
-      if (m_mode == Mode::RECIPE) {
-        m_mode = Mode::PLACE_PIPE;
+    if (!std::get_if<EvaluateSubState>(&m_sub_state)) {
+      if (!std::get_if<RecipeSubState>(&m_sub_state)) {
+        m_sub_state.emplace<RecipeSubState>();
       } else {
-        m_mode = Mode::RECIPE;
+        m_sub_state.emplace<PlacePipeSubState>();
       }
     }
   }
 
-  switch (m_mode) {
-    case Mode::PLACE_PIPE: {
-      draw_manager.draw_label(1, draw_manager.get_height() - 2, "Place Pipe");
-      draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe");
+  // # mode handling
 
-      int x, y;
-      if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
-        glm::ivec2 point{x, y};
+  if (std::get_if<PlacePipeSubState>(&m_sub_state)) {  // ## パイプの配置モード
+    draw_manager.draw_label(1, draw_manager.get_height() - 2, "Place Pipe");
+    draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe");
 
-        int machine_id, port_id;
-        if (m_machine_manager.find_machine_port(point, machine_id, port_id)) {
-          m_mode = Mode::LINK_PIPE;
-          m_mode_state.LinkPipe = {point, machine_id, port_id};
-        }
+    int x, y;
+    if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
+      glm::ivec2 point{x, y};
+
+      int machine_id, port_id;
+      if (m_machine_manager.find_machine_port(point, machine_id, port_id)) {
+        m_sub_state.emplace<LinkPipeSubState>(point, machine_id, port_id);
       }
-
-      break;
     }
-    case Mode::LINK_PIPE: {
-      draw_manager.draw_label(1, draw_manager.get_height() - 2, "Link Pipe");
-      draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe");
+  } else if (auto sub_state = std::get_if<LinkPipeSubState>(&m_sub_state)) {  // ## 生産ラインの入出力の関連付け
+    draw_manager.draw_label(1, draw_manager.get_height() - 2, "Link Pipe");
+    draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe");
 
-      int x, y;
-      if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
-        glm::ivec2 point{x, y};
+    int x, y;
+    if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
+      glm::ivec2 point{x, y};
 
-        // 生産ラインの入出力の関連付け
-        int machine_id, port_id;
-        if (m_machine_manager.find_machine_port(point, machine_id, port_id)) {
-          auto pipe = std::make_unique<Pipe>(m_mode_state.LinkPipe.point, point);
-          m_pipe_manager.add_pipe(std::move(pipe));
+      int machine_id, port_id;
+      if (m_machine_manager.find_machine_port(point, machine_id, port_id)) {
+        auto pipe = std::make_unique<Pipe>(sub_state->m_point, point);
+        m_pipe_manager.add_pipe(std::move(pipe));
 
-          m_mode = Mode::PLACE_PIPE;
-          m_mode_state.PlacePipe = {};
-        }
+        m_sub_state.emplace<PlacePipeSubState>();
       }
-
-      break;
     }
-    case Mode::PLACE_MACHINE: {
-      draw_manager.draw_label(1, draw_manager.get_height() - 2, "Place Machine");
-      draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe, Space: Change Machine");
+  } else if (auto sub_state = std::get_if<PlaceMachineSubState>(&m_sub_state)) {  // ## 生産ラインの機械の配置
+    draw_manager.draw_label(1, draw_manager.get_height() - 2, "Place Machine");
+    draw_manager.draw_label(1, draw_manager.get_height() - 1, "LClick: Place, RClick: Remove, Tab: Change Mode, Enter: Submit, Esc: Quit, R: Recipe, Space: Change Machine");
 
-      MachineKind& machine_kind{m_mode_state.PlaceMachine.machine};
-      switch (machine_kind) {
-        case MachineKind::ELECTROLYZER:
-          draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Electrolyzer]");
-          break;
-        case MachineKind::CUTTER:
-          draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Cutter]");
-          break;
-        case MachineKind::LAZER:
-          draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Lazer]");
-          break;
-        case MachineKind::ASSEMBLER:
-          draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Assembler]");
-          break;
-      }
-
-      if (draw_manager.handle_input_keycode(KEYCODE_SPACE)) {
-        switch (machine_kind) {
-          case MachineKind::ELECTROLYZER:
-            machine_kind = MachineKind::CUTTER;
-            break;
-          case MachineKind::CUTTER:
-            machine_kind = MachineKind::LAZER;
-            break;
-          case MachineKind::LAZER:
-            machine_kind = MachineKind::ASSEMBLER;
-            break;
-          case MachineKind::ASSEMBLER:
-            machine_kind = MachineKind::ELECTROLYZER;
-            break;
-        }
-      }
-
-      int x, y;
-      if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
-        glm::ivec2 point{x, y};
-
-        switch (machine_kind) {
-          case MachineKind::ELECTROLYZER: {
-            auto machine = std::make_unique<Electrolyzer>(point);
-            m_machine_manager.add_machine(std::move(machine));
-            break;
-          }
-          case MachineKind::CUTTER: {
-            auto machine = std::make_unique<Cutter>(point);
-            m_machine_manager.add_machine(std::move(machine));
-            break;
-          }
-          case MachineKind::LAZER: {
-            auto machine = std::make_unique<Laser>(point);
-            m_machine_manager.add_machine(std::move(machine));
-            break;
-          }
-          case MachineKind::ASSEMBLER: {
-            auto machine = std::make_unique<Assembler>(point);
-            m_machine_manager.add_machine(std::move(machine));
-            break;
-          }
-        }
-      }
-
-      break;
+    MachineKind& machine_kind = sub_state->m_machine;
+    if (machine_kind == MachineKind::ELECTROLYZER) {
+      draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Electrolyzer]");
+    } else if (machine_kind == MachineKind::CUTTER) {
+      draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Cutter]");
+    } else if (machine_kind == MachineKind::LAZER) {
+      draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Lazer]");
+    } else if (machine_kind == MachineKind::ASSEMBLER) {
+      draw_manager.draw_label(15, draw_manager.get_height() - 2, "[Assembler]");
     }
-    case Mode::EVALUATE: {
-      std::stringstream status_stream;
-      status_stream << "Evaluating... : " << std::setprecision(2) << std::fixed << (static_cast<float>(m_mode_state.Evaluate.time_count) / 60.0f) << " / 3.00";
-      std::string status = status_stream.str();
 
-      draw_manager.draw_label_box(50, 1, status);
-
-      m_mode_state.Evaluate.time_count++;
-      if (m_mode_state.Evaluate.time_count <= 60 * 3) {
-        // m_machine_manager.evaluate(&m_stats, m_rng);
-      } else {
-        return new ResultState{m_stats};
+    if (draw_manager.handle_input_keycode(KEYCODE_SPACE)) {
+      if (machine_kind == MachineKind::ELECTROLYZER) {
+        machine_kind = MachineKind::CUTTER;
+      } else if (machine_kind == MachineKind::CUTTER) {
+        machine_kind = MachineKind::LAZER;
+      } else if (machine_kind == MachineKind::LAZER) {
+        machine_kind = MachineKind::ASSEMBLER;
+      } else if (machine_kind == MachineKind::ASSEMBLER) {
+        machine_kind = MachineKind::ELECTROLYZER;
       }
-
-      break;
     }
-    case Mode::RECIPE: {
-      draw_manager.draw_clear_box(20, 4, 80, 20);
-      draw_manager.draw_line_box(20, 4, 80, 20);
-      draw_manager.draw_label_box(21, 5, "Recipe Book : R to Exit");
 
-      draw_manager.draw_label(22, 8, "[Electrolyzer]");
-      draw_manager.draw_label(22, 9, "Input : Water");
-      draw_manager.draw_label(22, 10, "Output 1 : Hydrogen");
-      draw_manager.draw_label(22, 11, "Output 2 : Oxygen");
+    int x, y;
+    if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
+      glm::ivec2 point{x, y};
 
-      draw_manager.draw_label(22, 13, "[Cutter]");
-      draw_manager.draw_label(22, 14, "Input : Silicon");
-      draw_manager.draw_label(22, 15, "Output : Silicon Wafer");
-
-      draw_manager.draw_label(22, 17, "[Cutter]");
-      draw_manager.draw_label(22, 18, "Input : Circuit Wafer");
-      draw_manager.draw_label(22, 19, "Output : Circuit");
-
-      draw_manager.draw_label(52, 8, "[Laser]");
-      draw_manager.draw_label(52, 9, "Input : Silicon Wafer");
-      draw_manager.draw_label(52, 10, "Output : Circuit Wafer");
-
-      draw_manager.draw_label(52, 12, "[Assembler]");
-      draw_manager.draw_label(52, 13, "Input 1 : Circuit");
-      draw_manager.draw_label(52, 14, "Input 2 : Soldering Iron");
-      draw_manager.draw_label(52, 15, "Input 3 : Circuit Board");
-      draw_manager.draw_label(52, 16, "Output : Chip");
-
-      break;
+      if (machine_kind == MachineKind::ELECTROLYZER) {
+        auto machine = std::make_unique<Electrolyzer>(point);
+        m_machine_manager.add_machine(std::move(machine));
+      } else if (machine_kind == MachineKind::CUTTER) {
+        auto machine = std::make_unique<Cutter>(point);
+        m_machine_manager.add_machine(std::move(machine));
+      } else if (machine_kind == MachineKind::LAZER) {
+        auto machine = std::make_unique<Laser>(point);
+        m_machine_manager.add_machine(std::move(machine));
+      } else if (machine_kind == MachineKind::ASSEMBLER) {
+        auto machine = std::make_unique<Assembler>(point);
+        m_machine_manager.add_machine(std::move(machine));
+      }
     }
+  } else if (auto sub_state = std::get_if<EvaluateSubState>(&m_sub_state)) {  // ## 生産ラインの評価モード
+    std::stringstream status_stream;
+    status_stream << "Evaluating... : " << std::setprecision(2) << std::fixed << (sub_state->m_time_count / 60.0f) << " / 3.00";
+    std::string status = status_stream.str();
+
+    draw_manager.draw_label_box(50, 1, status);
+
+    sub_state->m_time_count++;
+    if (sub_state->m_time_count <= 60 * 3) {
+      // m_machine_manager.evaluate(&m_stats, m_rng);
+    } else {
+      return new ResultState{m_stats};
+    }
+  } else if (std::get_if<RecipeSubState>(&m_sub_state)) {  // ## レシピの確認
+    draw_manager.draw_clear_box(20, 4, 80, 20);
+    draw_manager.draw_line_box(20, 4, 80, 20);
+    draw_manager.draw_label_box(21, 5, "Recipe Book : R to Exit");
+
+    draw_manager.draw_label(22, 8, "[Electrolyzer]");
+    draw_manager.draw_label(22, 9, "Input : Water");
+    draw_manager.draw_label(22, 10, "Output 1 : Hydrogen");
+    draw_manager.draw_label(22, 11, "Output 2 : Oxygen");
+
+    draw_manager.draw_label(22, 13, "[Cutter]");
+    draw_manager.draw_label(22, 14, "Input : Silicon");
+    draw_manager.draw_label(22, 15, "Output : Silicon Wafer");
+
+    draw_manager.draw_label(22, 17, "[Cutter]");
+    draw_manager.draw_label(22, 18, "Input : Circuit Wafer");
+    draw_manager.draw_label(22, 19, "Output : Circuit");
+
+    draw_manager.draw_label(52, 8, "[Laser]");
+    draw_manager.draw_label(52, 9, "Input : Silicon Wafer");
+    draw_manager.draw_label(52, 10, "Output : Circuit Wafer");
+
+    draw_manager.draw_label(52, 12, "[Assembler]");
+    draw_manager.draw_label(52, 13, "Input 1 : Circuit");
+    draw_manager.draw_label(52, 14, "Input 2 : Soldering Iron");
+    draw_manager.draw_label(52, 15, "Input 3 : Circuit Board");
+    draw_manager.draw_label(52, 16, "Output : Chip");
   }
 
-  // remove pipe or machine
-  if (m_mode != Mode::EVALUATE && m_mode != Mode::RECIPE) {
+  // # remove pipe or machine
+
+  if (!std::get_if<EvaluateSubState>(&m_sub_state) && std::get_if<RecipeSubState>(&m_sub_state)) {
     int x, y;
     if (draw_manager.handle_input_mouse(MOUSE_RCLICK, x, y)) {
-      if (m_mode == Mode::LINK_PIPE) {
-        m_mode = Mode::PLACE_PIPE;
-        m_mode_state.PlacePipe = {};
+      if (std::get_if<LinkPipeSubState>(&m_sub_state)) {
+        m_sub_state.emplace<PlacePipeSubState>();
       }
 
       int pipe_id;
