@@ -12,16 +12,11 @@ int main() {
   auto draw_manager = std::make_unique<DrawManagerLinux>();
 #endif
 
-  State* state = new TitleState();
+  auto state_manager = std::make_unique<StateManager>();
 
-  do {
-    State* new_state = state->update(*draw_manager);
-
-    if (new_state != state) {
-      delete state;
-      state = new_state;
-    }
-  } while (state != nullptr);
+  while (state_manager->is_running()) {
+    state_manager->update(*draw_manager);
+  }
 
   return EXIT_SUCCESS;
 }

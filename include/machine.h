@@ -16,7 +16,6 @@ class MachineBase {
   glm::ivec2 m_point;
 
   MachineBase(glm::ivec2 point);
-  virtual ~MachineBase();
 
   virtual bool is_breakable() = 0;
 
@@ -28,7 +27,6 @@ class MachineBase {
 class InputDuct : public MachineBase {
  public:
   InputDuct(glm::ivec2 point, Item item);
-  ~InputDuct() override;
 
   bool is_breakable() override;
 
@@ -43,7 +41,6 @@ class InputDuct : public MachineBase {
 class OutputDuct : public MachineBase {
  public:
   OutputDuct(glm::ivec2 point, Item item);
-  ~OutputDuct() override;
 
   bool is_breakable() override;
 
@@ -58,7 +55,6 @@ class OutputDuct : public MachineBase {
 class Electrolyzer : public MachineBase {
  public:
   Electrolyzer(glm::ivec2 point);
-  ~Electrolyzer() override;
 
   bool is_breakable() override;
 
@@ -70,7 +66,6 @@ class Electrolyzer : public MachineBase {
 class Cutter : public MachineBase {
  public:
   Cutter(glm::ivec2 point);
-  ~Cutter() override;
 
   bool is_breakable() override;
 
@@ -82,7 +77,6 @@ class Cutter : public MachineBase {
 class Laser : public MachineBase {
  public:
   Laser(glm::ivec2 point);
-  ~Laser() override;
 
   bool is_breakable() override;
 
@@ -94,7 +88,6 @@ class Laser : public MachineBase {
 class Assembler : public MachineBase {
  public:
   explicit Assembler(glm::ivec2 point);
-  ~Assembler() override;
 
   bool is_breakable() override;
 
@@ -106,7 +99,6 @@ class Assembler : public MachineBase {
 class MachineManager {
  public:
   MachineManager();
-  ~MachineManager();
 
   void build_spatial_idx();
   int add_machine(std::unique_ptr<MachineBase> machine);

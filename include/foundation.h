@@ -20,8 +20,7 @@ enum class Item {
 
 std::string_view item_to_string(Item item);
 
-class EvaluateContext {
- public:
+struct EvaluateContext {
   int stage;
   int design_time;
   std::vector<Item> items;

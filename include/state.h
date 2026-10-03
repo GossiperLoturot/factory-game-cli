@@ -15,50 +15,50 @@ enum class MachineKind {
   ASSEMBLER,
 };
 
-struct PlacePipeSubState {};
+class PlacePipeSubState {
+ public:
+  PlacePipeSubState();
+};
 
-struct LinkPipeSubState {
+class LinkPipeSubState {
+ public:
+  LinkPipeSubState(glm::ivec2 point, int machine_id, int port_id);
+
   glm::ivec2 m_point;
   int m_machine_id;
   int m_port_id;
 };
 
-struct PlaceMachineSubState {
+class PlaceMachineSubState {
+ public:
+  PlaceMachineSubState(MachineKind machine);
+
   MachineKind m_machine;
 };
 
-struct EvaluateSubState {
+class EvaluateSubState {
+ public:
+  EvaluateSubState();
+
   int m_time_count;
 };
 
-struct RecipeSubState {};
+class RecipeSubState {
+ public:
+  RecipeSubState();
+};
 
 using SubState = std::variant<PlacePipeSubState, LinkPipeSubState, PlaceMachineSubState, EvaluateSubState, RecipeSubState>;
 
-class State {
- public:
-  State();
-  virtual ~State();
-
-  virtual State* update(DrawManagerBase& draw_manager) = 0;
-};
-
-class TitleState : public State {
+class TitleState {
  public:
   TitleState();
-  ~TitleState() override;
-
-  State* update(DrawManagerBase& draw_manager) override;
 };
 
-class InGameState : public State {
+class InGameState {
  public:
-  InGameState(int stage);
-  ~InGameState() override;
+  InGameState();
 
-  State* update(DrawManagerBase& draw_manager) override;
-
- private:
   PipeManager m_pipe_manager;
   MachineManager m_machine_manager;
   SubState m_sub_state;
@@ -66,15 +66,30 @@ class InGameState : public State {
   EvaluateContext m_stats;
 };
 
-class ResultState : public State {
+class ResultState {
  public:
-  ResultState(EvaluateContext m_game_score);
-  ~ResultState() override;
+  ResultState(EvaluateContext stats);
 
-  State* update(DrawManagerBase& draw_manager) override;
+  EvaluateContext m_stats;
+};
+
+class TerminalState {
+ public:
+  TerminalState();
+};
+
+using State = std::variant<TitleState, InGameState, ResultState, TerminalState>;
+
+class StateManager {
+ public:
+  StateManager();
+
+  bool is_running();
+
+  void update(DrawManagerBase& draw_manager);
 
  private:
-  EvaluateContext m_stats;
+  State m_state;
 };
 
 #endif  // _STATE_H

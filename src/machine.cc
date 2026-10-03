@@ -5,14 +5,10 @@
 MachineBase::MachineBase(glm::ivec2 point) : m_point{point} {
 }
 
-MachineBase::~MachineBase() = default;
-
 // INPUT DUCT
 
 InputDuct::InputDuct(glm::ivec2 point, Item item) : MachineBase{point}, item{item} {
 }
-
-InputDuct::~InputDuct() = default;
 
 bool InputDuct::is_breakable() {
   return false;
@@ -38,8 +34,6 @@ std::vector<glm::ivec2> InputDuct::ports() {
 OutputDuct::OutputDuct(glm::ivec2 point, Item item) : MachineBase{point}, item{item} {
 }
 
-OutputDuct::~OutputDuct() = default;
-
 bool OutputDuct::is_breakable() {
   return false;
 }
@@ -63,8 +57,6 @@ std::vector<glm::ivec2> OutputDuct::ports() {
 
 Electrolyzer::Electrolyzer(glm::ivec2 point) : MachineBase{point} {
 }
-
-Electrolyzer::~Electrolyzer() = default;
 
 bool Electrolyzer::is_breakable() {
   return true;
@@ -94,8 +86,6 @@ std::vector<glm::ivec2> Electrolyzer::ports() {
 Cutter::Cutter(glm::ivec2 point) : MachineBase{point} {
 }
 
-Cutter::~Cutter() = default;
-
 bool Cutter::is_breakable() {
   return true;
 }
@@ -122,8 +112,6 @@ std::vector<glm::ivec2> Cutter::ports() {
 Laser::Laser(glm::ivec2 point) : MachineBase{point} {
 }
 
-Laser::~Laser() = default;
-
 bool Laser::is_breakable() {
   return true;
 }
@@ -149,8 +137,6 @@ std::vector<glm::ivec2> Laser::ports() {
 
 Assembler::Assembler(glm::ivec2 point) : MachineBase{point} {
 }
-
-Assembler::~Assembler() = default;
 
 bool Assembler::is_breakable() {
   return true;
@@ -181,8 +167,6 @@ std::vector<glm::ivec2> Assembler::ports() {
 
 MachineManager::MachineManager() : m_machines{}, m_spatial_idx{}, m_port_spatial_idx{} {
 }
-
-MachineManager::~MachineManager() = default;
 
 void MachineManager::build_spatial_idx() {
   m_spatial_idx.clear();

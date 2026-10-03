@@ -16,7 +16,6 @@ class Pipe {
   glm::ivec2 end;
 
   Pipe(glm::ivec2 begin, glm::ivec2 end);
-  ~Pipe();
 
   std::vector<glm::ivec4> rects();
   void draw(DrawManagerBase& draw_manager);
@@ -25,7 +24,6 @@ class Pipe {
 class PipeManager {
  public:
   PipeManager();
-  ~PipeManager();
 
   void build_spatial_idx();
   int add_pipe(std::unique_ptr<Pipe> pipe);

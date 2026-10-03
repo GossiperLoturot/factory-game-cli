@@ -7,8 +7,6 @@
 Pipe::Pipe(glm::ivec2 begin, glm::ivec2 end) : begin{begin}, end{end} {
 }
 
-Pipe::~Pipe() = default;
-
 void Pipe::draw(DrawManagerBase& draw_manager) {
   if (begin.x == end.x || begin.y == end.y) {
     draw_manager.draw_hv_line(begin.x, begin.y, end.x, end.y);
@@ -71,8 +69,6 @@ std::vector<glm::ivec4> Pipe::rects() {
 
 PipeManager::PipeManager() : m_pipes{}, m_spatial_idx{} {
 }
-
-PipeManager::~PipeManager() = default;
 
 void PipeManager::build_spatial_idx() {
   m_spatial_idx.clear();
