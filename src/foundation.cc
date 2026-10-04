@@ -28,3 +28,6 @@ std::string_view item_to_string(Item item) {
       return "Unknown";
   }
 }
+
+EvaluateContext::EvaluateContext() : m_stage{}, m_design_time{}, m_items{}, m_rng{std::random_device{}()} {
+}

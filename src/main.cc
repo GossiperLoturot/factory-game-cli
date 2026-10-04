@@ -1,14 +1,17 @@
-﻿#include "draw.h"
+﻿#include <cstdlib>
+#include <memory>
+
+#include "draw.h"
 #include "state.h"
 
 int main() {
   // Windows
-#if defined(WIN32)
+#ifdef _WIN32
   auto draw_manager = std::make_unique<DrawManagerWindows>();
 #endif
 
   // Linux
-#if defined(__linux__)
+#ifdef __linux__
   auto draw_manager = std::make_unique<DrawManagerLinux>();
 #endif
 

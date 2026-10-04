@@ -1,7 +1,5 @@
 #include "draw.h"
 
-#include <termios.h>
-
 #include <iostream>
 #include <thread>
 
@@ -10,7 +8,7 @@ DrawManagerBase::~DrawManagerBase() = default;
 
 // Windows
 
-#if defined(WIN32)
+#ifdef _WIN32
 DrawManagerWindows::DrawManagerWindows() {
   m_width = 120;
   m_height = 30;
@@ -129,7 +127,7 @@ void DrawManagerWindows::draw_hv_line(int x0, int y0, int x1, int y1) {
     }
 
     for (int x = x0; x <= x1; ++x) {
-      if (x < 0 && x >= m_width) {
+      if (x < 0 || x >= m_width) {
         continue;
       }
 
@@ -194,7 +192,7 @@ bool DrawManagerWindows::handle_input_mouse(int state, int& x, int& y) {
 
 // Linux
 
-#if defined(__linux__)
+#ifdef __linux__
 DrawManagerLinux::DrawManagerLinux() {
   m_width = 120;
   m_height = 30;
@@ -308,7 +306,7 @@ void DrawManagerLinux::draw_hv_line(int x0, int y0, int x1, int y1) {
     }
 
     for (int x = x0; x <= x1; ++x) {
-      if (x < 0 && x >= m_width) {
+      if (x < 0 || x >= m_width) {
         continue;
       }
 

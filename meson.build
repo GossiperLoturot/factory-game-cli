@@ -17,7 +17,6 @@ exe = executable(
     'src/draw.cc',
     'src/foundation.cc',
     'src/machine.cc',
-    'src/pipe.cc',
     'src/state.cc',
   ],
   include_directories: inc

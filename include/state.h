@@ -1,12 +1,10 @@
-#ifndef _STATE_H
-#define _STATE_H
+#ifndef STATE_H
+#define STATE_H
 
-#include <random>
 #include <variant>
 
 #include "draw.h"
 #include "machine.h"
-#include "pipe.h"
 
 enum class MachineKind {
   ELECTROLYZER,
@@ -59,18 +57,16 @@ class InGameState {
  public:
   InGameState();
 
-  PipeManager m_pipe_manager;
   MachineManager m_machine_manager;
   SubState m_sub_state;
-  std::mt19937 m_rng;
-  EvaluateContext m_stats;
+  EvaluateContext m_eval_ctx;
 };
 
 class ResultState {
  public:
-  ResultState(EvaluateContext stats);
+  ResultState(EvaluateContext&& eval_ctx);
 
-  EvaluateContext m_stats;
+  EvaluateContext m_eval_ctx;
 };
 
 class TerminalState {
@@ -92,4 +88,4 @@ class StateManager {
   State m_state;
 };
 
-#endif  // _STATE_H
+#endif  // STATE_H

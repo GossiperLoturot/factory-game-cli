@@ -1,8 +1,9 @@
-#ifndef _FOUNDATION_H
-#define _FOUNDATION_H
+#ifndef FOUNDATION_H
+#define FOUNDATION_H
 
+#include <random>
 #include <string_view>
-#include <vector>
+#include <unordered_map>
 
 enum class Item {
   WATER,
@@ -20,11 +21,14 @@ enum class Item {
 
 std::string_view item_to_string(Item item);
 
-struct EvaluateContext {
-  int stage;
-  int design_time;
-  std::vector<Item> items;
-  std::vector<int> counts;
+class EvaluateContext {
+ public:
+  int m_stage;
+  int m_design_time;
+  std::unordered_map<Item, int> m_items;
+  std::mt19937 m_rng;
+
+  EvaluateContext();
 };
 
-#endif  // _FOUNDATION_H
+#endif  // FOUNDATION_H

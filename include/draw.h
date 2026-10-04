@@ -1,5 +1,5 @@
-#ifndef _DRAW_H_
-#define _DRAW_H_
+#ifndef DRAW_H_
+#define DRAW_H_
 
 #include <string_view>
 #include <vector>
@@ -27,7 +27,7 @@ class DrawManagerBase {
 
 // Windows
 
-#if defined(WIN32)
+#ifdef _WIN32
 #include "windows.h"
 
 #define KEYCODE_RETURN VK_RETURN
@@ -74,7 +74,7 @@ class DrawManagerWindows : public DrawManagerBase {
 
 // Linux
 
-#if defined(__linux__)
+#ifdef __linux__
 #include <termios.h>
 #include <unistd.h>
 
@@ -116,4 +116,4 @@ class DrawManagerLinux : public DrawManagerBase {
 };
 #endif
 
-#endif  // _DRAW_H_
+#endif  // DRAW_H_

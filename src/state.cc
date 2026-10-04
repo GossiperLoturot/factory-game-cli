@@ -22,10 +22,10 @@ RecipeSubState::RecipeSubState() {
 TitleState::TitleState() {
 }
 
-InGameState::InGameState() : m_pipe_manager{}, m_machine_manager{}, m_sub_state{PlacePipeSubState{}}, m_rng{std::random_device{}()}, m_stats{} {
+InGameState::InGameState() : m_machine_manager{}, m_sub_state{PlacePipeSubState{}}, m_eval_ctx{} {
 }
 
-ResultState::ResultState(EvaluateContext stats) : m_stats{stats} {
+ResultState::ResultState(EvaluateContext&& eval_ctx) : m_eval_ctx{std::move(eval_ctx)} {
 }
 
 TerminalState::TerminalState() {
@@ -34,8 +34,8 @@ TerminalState::TerminalState() {
 InGameState generate_level(int stage) {
   InGameState level{};
 
-  level.m_stats.stage = stage;
-  level.m_stats.design_time = 60 * 60;
+  level.m_eval_ctx.m_stage = stage;
+  level.m_eval_ctx.m_design_time = 60 * 60;
 
   // Stage 1.
   if (stage == 1) {
@@ -105,7 +105,6 @@ void StateManager::update(DrawManagerBase& draw_manager) {
   } else if (auto state = std::get_if<InGameState>(&m_state)) {  // ゲームプレイ中の状態
     draw_manager.clear();
 
-    state->m_pipe_manager.draw(draw_manager);
     state->m_machine_manager.draw(draw_manager);
 
     // # handling input
@@ -128,7 +127,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
       }
     }
 
-    if (draw_manager.handle_input_keycode('r')) {
+    if (draw_manager.handle_input_keycode(KEYCODE_R)) {
       if (!std::holds_alternative<EvaluateSubState>(state->m_sub_state)) {
         if (!std::holds_alternative<RecipeSubState>(state->m_sub_state)) {
           state->m_sub_state.emplace<RecipeSubState>();
@@ -159,12 +158,22 @@ void StateManager::update(DrawManagerBase& draw_manager) {
 
       int x, y;
       if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y)) {
-        glm::ivec2 point{x, y};
+        glm::ivec2 point0 = sub_state->m_point;
+        glm::ivec2 point1{x, y};
 
-        int machine_id, port_id;
-        if (state->m_machine_manager.find_machine_port(point, machine_id, port_id)) {
-          auto pipe = std::make_unique<Pipe>(sub_state->m_point, point);
-          state->m_pipe_manager.add_pipe(std::move(pipe));
+        int machine_id0 = sub_state->m_machine_id;
+        int port_id0 = sub_state->m_port_id;
+        int machine_id1, port_id1;
+        if (state->m_machine_manager.find_machine_port(point1, machine_id1, port_id1)) {
+          int pipe_id = state->m_machine_manager.add_pipe(Pipe{point0, machine_id0, port_id0, point1, machine_id1, port_id1});
+          auto port0 = state->m_machine_manager.get_machine(machine_id0)->port(port_id0);
+          auto port1 = state->m_machine_manager.get_machine(machine_id1)->port(port_id1);
+          // register pipe
+          port0.m_pipe_ids.push_back(pipe_id);
+          port1.m_pipe_ids.push_back(pipe_id);
+          // register machine port
+          port0.m_machine_port_ids.push_back({machine_id1, port_id1});
+          port1.m_machine_port_ids.push_back({machine_id0, port_id0});
 
           state->m_sub_state.emplace<PlacePipeSubState>();
         }
@@ -222,10 +231,10 @@ void StateManager::update(DrawManagerBase& draw_manager) {
       draw_manager.draw_label_box(50, 1, status);
 
       sub_state->m_time_count++;
-      if (sub_state->m_time_count <= 60 * 3) {
-        // m_machine_manager.evaluate(&m_stats, m_rng);
+      if (sub_state->m_time_count <= 180) {
+        state->m_machine_manager.evaluate(state->m_eval_ctx);
       } else {
-        m_state.emplace<ResultState>(state->m_stats);
+        m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
       }
     } else if (auto sub_state = std::get_if<RecipeSubState>(&state->m_sub_state)) {  // ## レシピの確認
       draw_manager.draw_clear_box(20, 4, 80, 20);
@@ -258,7 +267,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
 
     // # remove pipe or machine
 
-    if (!std::holds_alternative<EvaluateSubState>(state->m_sub_state) && std::holds_alternative<RecipeSubState>(state->m_sub_state)) {
+    if (!std::holds_alternative<EvaluateSubState>(state->m_sub_state) && !std::holds_alternative<RecipeSubState>(state->m_sub_state)) {
       int x, y;
       if (draw_manager.handle_input_mouse(MOUSE_RCLICK, x, y)) {
         if (std::holds_alternative<LinkPipeSubState>(state->m_sub_state)) {
@@ -266,20 +275,45 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         }
 
         int pipe_id;
-        if (state->m_pipe_manager.find_pipe(glm::ivec2{x, y}, pipe_id)) {
-          state->m_pipe_manager.remove_pipe(pipe_id);
+        if (state->m_machine_manager.find_pipe(glm::ivec2{x, y}, pipe_id)) {
+          Pipe pipe = state->m_machine_manager.remove_pipe(pipe_id);
+
+          auto port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
+          auto port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
+          // unregister pipe
+          std::erase(port0.m_pipe_ids, pipe_id);
+          std::erase(port1.m_pipe_ids, pipe_id);
+          // unregister machine port
+          std::erase(port0.m_machine_port_ids, std::make_pair(pipe.m_end_machine_id, pipe.m_end_port_id));
+          std::erase(port1.m_machine_port_ids, std::make_pair(pipe.m_begin_machine_id, pipe.m_begin_port_id));
         }
 
         int machine_id;
         if (state->m_machine_manager.find_machine(glm::ivec2{x, y}, machine_id)) {
+          int n_pipe = state->m_machine_manager.get_machine(machine_id)->port_count();
+          for (int port_id = 0; port_id < n_pipe; port_id++) {
+            auto port = state->m_machine_manager.get_machine(machine_id)->port(port_id);
+            for (int pipe_id : port.m_pipe_ids) {
+              Pipe pipe = state->m_machine_manager.remove_pipe(pipe_id);
+
+              auto port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
+              auto port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
+              // unregister pipe
+              std::erase(port0.m_pipe_ids, pipe_id);
+              std::erase(port1.m_pipe_ids, pipe_id);
+              // unregister machine port
+              std::erase(port0.m_machine_port_ids, std::make_pair(pipe.m_end_machine_id, pipe.m_end_port_id));
+              std::erase(port1.m_machine_port_ids, std::make_pair(pipe.m_begin_machine_id, pipe.m_begin_port_id));
+            }
+          }
           state->m_machine_manager.remove_machine(machine_id);
         }
       }
     }
 
     // timer
-    std::stringstream time_stream;
-    time_stream << "Time : " << (state->m_stats.design_time / 60) << ":" << std::setw(2) << std::setfill('0') << (state->m_stats.design_time % 60);
+    std::stringstream time_stream{};
+    time_stream << "Time : " << (state->m_eval_ctx.m_design_time / 60) << ":" << std::setw(2) << std::setfill('0') << (state->m_eval_ctx.m_design_time % 60);
     std::string time = time_stream.str();
     draw_manager.draw_label_box(draw_manager.get_width() - 1 - static_cast<int>(time.size()), draw_manager.get_height() - 4, time);
 
@@ -289,7 +323,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     draw_manager.present();
 
     if (draw_manager.handle_input_keycode(KEYCODE_ESCAPE)) {
-      m_state.emplace<ResultState>(state->m_stats);
+      m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
     }
   } else if (auto state = std::get_if<ResultState>(&m_state)) {  // 結果画面
     draw_manager.clear();
@@ -297,28 +331,30 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     draw_manager.draw_label_box(30, 10, "Game Result");
 
     // time
-    std::stringstream time_stream;
-    time_stream << "Time : " << (state->m_stats.design_time / 60) << ":" << std::setw(2) << std::setfill('0') << (state->m_stats.design_time % 60) << " / 60:00";
+    std::stringstream time_stream{};
+    time_stream << "Time : " << (state->m_eval_ctx.m_design_time / 60) << ":" << std::setw(2) << std::setfill('0') << (state->m_eval_ctx.m_design_time % 60) << " / 60:00";
     std::string time = time_stream.str();
     draw_manager.draw_label(30, 14, time);
 
     // score
+    int line_i = 0;
     bool is_perfect = true;
     bool is_bad_inv = false;
     float score_value = 0.0f;
-    for (int i = 0; i < state->m_stats.items.size(); ++i) {
-      std::stringstream line_stream;
-      line_stream << item_to_string(state->m_stats.items.at(i)) << " : " << state->m_stats.counts.at(i) << " unit.";
+    for (auto kv : state->m_eval_ctx.m_items) {
+      std::stringstream line_stream{};
+      line_stream << item_to_string(kv.first) << " : " << kv.second << " unit.";
       std::string line = line_stream.str();
-      draw_manager.draw_label(30, 16 + i, line);
+      draw_manager.draw_label(30, 16 + line_i, line);
+      line_i += 1;
 
-      is_perfect &= (state->m_stats.counts.at(i) > 0);
-      is_bad_inv |= (state->m_stats.counts.at(i) > 0);
+      is_perfect &= (kv.second > 0);
+      is_bad_inv |= (kv.second > 0);
 
-      score_value += static_cast<float>(state->m_stats.counts.at(i));
+      score_value += static_cast<float>(kv.second);
     }
-    score_value *= (static_cast<float>(state->m_stats.design_time) / 3600.0f);
-    std::stringstream score_stream;
+    score_value *= (static_cast<float>(state->m_eval_ctx.m_design_time) / 3600.0f);
+    std::stringstream score_stream{};
     score_stream << "Score : " << std::setprecision(2) << std::fixed << score_value;
     std::string score = score_stream.str();
     draw_manager.draw_label(30, 12, score);
@@ -342,7 +378,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
 
     int x, y;
     if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y) || draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
-      if (state->m_stats.stage == 1 && is_bad_inv) {
+      if (state->m_eval_ctx.m_stage == 1 && is_bad_inv) {
         m_state.emplace<InGameState>(generate_level(2));
       } else {
         m_state.emplace<TerminalState>();
