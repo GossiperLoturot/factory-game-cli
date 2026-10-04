@@ -3,6 +3,7 @@
 #include <iomanip>
 
 #include "draw.h"
+#include "foundation.h"
 
 PlacePipeSubState::PlacePipeSubState() {
 }
@@ -244,7 +245,8 @@ void StateManager::update(DrawManagerBase& draw_manager) {
       if (sub_state->m_time_count <= 180) {
         state->m_machine_manager.evaluate(state->m_eval_ctx);
       } else {
-        m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
+        EvaluateContext eval_ctx = std::move(state->m_eval_ctx);
+        m_state.emplace<ResultState>(std::move(eval_ctx));
         return;
       }
     } else if (auto sub_state = std::get_if<RecipeSubState>(&state->m_sub_state)) {  // ## レシピの確認
@@ -321,6 +323,8 @@ void StateManager::update(DrawManagerBase& draw_manager) {
           state->m_machine_manager.remove_machine(machine_id);
         }
       }
+
+      state->m_eval_ctx.m_design_time -= 1;
     }
 
     // timer
@@ -335,7 +339,8 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     draw_manager.present();
 
     if (draw_manager.handle_input_keycode(KEYCODE_ESCAPE)) {
-      m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
+      EvaluateContext eval_ctx = std::move(state->m_eval_ctx);
+      m_state.emplace<ResultState>(std::move(eval_ctx));
       return;
     }
   } else if (auto state = std::get_if<ResultState>(&m_state)) {  // 結果画面

@@ -223,7 +223,7 @@ void Electrolyzer::evaluate(MachineManager& mgr, EvaluateContext& ctx) {
       mgr.get_machine(machine_id)->insert_item(port_id, Item::HYDROGEN);
     }
 
-    auto& port1 = m_ports.at(1);
+    auto& port1 = m_ports.at(2);
     if (!port1.m_pipe_ids.empty()) {
       std::uniform_int_distribution<int> dist{0, static_cast<int>(port1.m_machine_port_ids.size() - 1)};
       auto& machine_port = port1.m_machine_port_ids.at(dist(ctx.m_rng));
@@ -244,7 +244,7 @@ void Electrolyzer::insert_item(int port_id, Item item) {
 
 // CUTTER MACHINE
 
-Cutter::Cutter(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}} {
+Cutter::Cutter(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}}, m_stored_count{} {
 }
 
 Cutter::~Cutter() {
@@ -278,14 +278,44 @@ const MachinePort& Cutter::port(int port_id) const {
 }
 
 void Cutter::evaluate(MachineManager& mgr, EvaluateContext& ctx) {
+  if (m_stored_count[0] > 0) {
+    auto& port = m_ports.at(1);
+    if (!port.m_pipe_ids.empty()) {
+      std::uniform_int_distribution<int> dist{0, static_cast<int>(port.m_machine_port_ids.size() - 1)};
+      auto& machine_port = port.m_machine_port_ids.at(dist(ctx.m_rng));
+      int machine_id = machine_port.first;
+      int port_id = machine_port.second;
+      mgr.get_machine(machine_id)->insert_item(port_id, Item::SILICON_WAFER);
+    }
+
+    m_stored_count[0] -= 1;
+  }
+
+  if (m_stored_count[1] > 0) {
+    auto& port = m_ports.at(1);
+    if (!port.m_pipe_ids.empty()) {
+      std::uniform_int_distribution<int> dist{0, static_cast<int>(port.m_machine_port_ids.size() - 1)};
+      auto& machine_port = port.m_machine_port_ids.at(dist(ctx.m_rng));
+      int machine_id = machine_port.first;
+      int port_id = machine_port.second;
+      mgr.get_machine(machine_id)->insert_item(port_id, Item::CIRCUIT);
+    }
+
+    m_stored_count[1] -= 1;
+  }
 }
 
 void Cutter::insert_item(int port_id, Item item) {
+  if (port_id == 0 && item == Item::SILICON) {
+    m_stored_count[0] += 1;
+  } else if (port_id == 0 && item == Item::CIRCUIT_WAFER) {
+    m_stored_count[1] += 1;
+  }
 }
 
 // LAZER MACHINE
 
-Laser::Laser(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}} {
+Laser::Laser(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}}, m_stored_count{} {
 }
 
 Laser::~Laser() {
@@ -319,14 +349,29 @@ const MachinePort& Laser::port(int port_id) const {
 }
 
 void Laser::evaluate(MachineManager& mgr, EvaluateContext& ctx) {
+  if (m_stored_count > 0) {
+    auto& port = m_ports.at(1);
+    if (!port.m_pipe_ids.empty()) {
+      std::uniform_int_distribution<int> dist{0, static_cast<int>(port.m_machine_port_ids.size() - 1)};
+      auto& machine_port = port.m_machine_port_ids.at(dist(ctx.m_rng));
+      int machine_id = machine_port.first;
+      int port_id = machine_port.second;
+      mgr.get_machine(machine_id)->insert_item(port_id, Item::CIRCUIT_WAFER);
+    }
+
+    m_stored_count -= 1;
+  }
 }
 
 void Laser::insert_item(int port_id, Item item) {
+  if (port_id == 0 && item == Item::SILICON_WAFER) {
+    m_stored_count += 1;
+  }
 }
 
 // ASSEMBLER MACHINE
 
-Assembler::Assembler(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 2, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 8, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}} {
+Assembler::Assembler(glm::ivec2 point) : MachineBase{point}, m_ports{MachinePort{glm::ivec2{point.x + 2, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y - 1}}, MachinePort{glm::ivec2{point.x + 8, point.y - 1}}, MachinePort{glm::ivec2{point.x + 5, point.y + 1}}}, m_stored_count{} {
 }
 
 Assembler::~Assembler() {
@@ -362,9 +407,30 @@ const MachinePort& Assembler::port(int port_id) const {
 }
 
 void Assembler::evaluate(MachineManager& mgr, EvaluateContext& ctx) {
+  if (m_stored_count[0] > 0 && m_stored_count[1] > 0 && m_stored_count[2] > 0) {
+    auto& port = m_ports.at(3);
+    if (!port.m_pipe_ids.empty()) {
+      std::uniform_int_distribution<int> dist{0, static_cast<int>(port.m_machine_port_ids.size() - 1)};
+      auto& machine_port = port.m_machine_port_ids.at(dist(ctx.m_rng));
+      int machine_id = machine_port.first;
+      int port_id = machine_port.second;
+      mgr.get_machine(machine_id)->insert_item(port_id, Item::CHIP);
+    }
+
+    m_stored_count[0] -= 1;
+    m_stored_count[1] -= 1;
+    m_stored_count[2] -= 1;
+  }
 }
 
 void Assembler::insert_item(int port_id, Item item) {
+  if (port_id != 3 && item == Item::CIRCUIT) {
+    m_stored_count[0] += 1;
+  } else if (port_id != 3 && item == Item::SOLDERING_IRON) {
+    m_stored_count[1] += 1;
+  } else if (port_id != 3 && item == Item::CIRCUIT_BOARD) {
+    m_stored_count[2] += 1;
+  }
 }
 
 // MACHINE MANAGER

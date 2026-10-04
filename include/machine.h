@@ -162,6 +162,7 @@ class Cutter : public MachineBase {
 
  private:
   std::array<MachinePort, 2> m_ports;
+  std::array<int, 2> m_stored_count;
 };
 
 class Laser : public MachineBase {
@@ -185,6 +186,7 @@ class Laser : public MachineBase {
 
  private:
   std::array<MachinePort, 2> m_ports;
+  int m_stored_count;
 };
 
 class Assembler : public MachineBase {
@@ -208,6 +210,7 @@ class Assembler : public MachineBase {
 
  private:
   std::array<MachinePort, 4> m_ports;
+  std::array<int, 3> m_stored_count;
 };
 
 class MachineManager {
