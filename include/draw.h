@@ -7,6 +7,10 @@
 class DrawManagerBase {
  public:
   DrawManagerBase();
+  DrawManagerBase(const DrawManagerBase&) = delete;
+  DrawManagerBase& operator=(const DrawManagerBase&) = delete;
+  DrawManagerBase(DrawManagerBase&&) = default;
+  DrawManagerBase& operator=(DrawManagerBase&&) = default;
   virtual ~DrawManagerBase();
 
   virtual int get_width() = 0;
@@ -41,6 +45,10 @@ class DrawManagerBase {
 class DrawManagerWindows : public DrawManagerBase {
  public:
   DrawManagerWindows();
+  DrawManagerWindows(const DrawManagerWindows&) = delete;
+  DrawManagerWindows& operator=(const DrawManagerWindows&) = delete;
+  DrawManagerWindows(DrawManagerWindows&&) = default;
+  DrawManagerWindows& operator=(DrawManagerWindows&&) = default;
   ~DrawManagerWindows() override;
 
   int get_width() override;
@@ -89,6 +97,10 @@ class DrawManagerWindows : public DrawManagerBase {
 class DrawManagerLinux : public DrawManagerBase {
  public:
   DrawManagerLinux();
+  DrawManagerLinux(const DrawManagerLinux&) = delete;
+  DrawManagerLinux& operator=(const DrawManagerLinux&) = delete;
+  DrawManagerLinux(DrawManagerLinux&&) = default;
+  DrawManagerLinux& operator=(DrawManagerLinux&&) = default;
   ~DrawManagerLinux() override;
 
   int get_width() override;

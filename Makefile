@@ -8,7 +8,7 @@ build:
 
 check: build
 	@clang-format -i $(FORM_SRC)
-	# @clang-tidy $(TIDY_SRC) -p build
+	@clang-tidy $(TIDY_SRC) -p build
 
 compile: build
 	@meson compile -C build

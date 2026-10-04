@@ -24,6 +24,10 @@ class Pipe {
   int m_end_port_id;
 
   Pipe(glm::ivec2 begin, int begin_machine_id, int begin_port_id, glm::ivec2 end, int end_machine_id, int end_port_id);
+  Pipe(const Pipe&) = delete;
+  Pipe& operator=(const Pipe&) = delete;
+  Pipe(Pipe&&) = default;
+  Pipe& operator=(Pipe&&) = default;
 
   std::vector<glm::ivec4> rects() const;
   void draw(DrawManagerBase& draw_manager) const;
@@ -36,6 +40,10 @@ class MachinePort {
   std::vector<std::pair<int, int>> m_machine_port_ids;
 
   MachinePort(glm::ivec2 point);
+  MachinePort(const MachinePort&) = delete;
+  MachinePort& operator=(const MachinePort&) = delete;
+  MachinePort(MachinePort&&) = default;
+  MachinePort& operator=(MachinePort&&) = default;
 };
 
 class MachineBase {
@@ -43,6 +51,10 @@ class MachineBase {
   glm::ivec2 m_point;
 
   MachineBase(glm::ivec2 point);
+  MachineBase(const MachineBase&) = delete;
+  MachineBase& operator=(const MachineBase&) = delete;
+  MachineBase(MachineBase&&) = default;
+  MachineBase& operator=(MachineBase&&) = default;
   virtual ~MachineBase();
 
   virtual bool is_breakable() = 0;
@@ -59,6 +71,10 @@ class MachineBase {
 class InputDuct : public MachineBase {
  public:
   InputDuct(glm::ivec2 point, Item item);
+  InputDuct(const InputDuct&) = delete;
+  InputDuct& operator=(const InputDuct&) = delete;
+  InputDuct(InputDuct&&) = default;
+  InputDuct& operator=(InputDuct&&) = default;
   ~InputDuct() override;
 
   bool is_breakable() override;
@@ -79,6 +95,10 @@ class InputDuct : public MachineBase {
 class OutputDuct : public MachineBase {
  public:
   OutputDuct(glm::ivec2 point, Item item);
+  OutputDuct(const OutputDuct&) = delete;
+  OutputDuct& operator=(const OutputDuct&) = delete;
+  OutputDuct(OutputDuct&&) = default;
+  OutputDuct& operator=(OutputDuct&&) = default;
   ~OutputDuct() override;
 
   bool is_breakable() override;
@@ -100,6 +120,10 @@ class OutputDuct : public MachineBase {
 class Electrolyzer : public MachineBase {
  public:
   Electrolyzer(glm::ivec2 point);
+  Electrolyzer(const Electrolyzer&) = delete;
+  Electrolyzer& operator=(const Electrolyzer&) = delete;
+  Electrolyzer(Electrolyzer&&) = default;
+  Electrolyzer& operator=(Electrolyzer&&) = default;
   ~Electrolyzer() override;
 
   bool is_breakable() override;
@@ -120,6 +144,10 @@ class Electrolyzer : public MachineBase {
 class Cutter : public MachineBase {
  public:
   Cutter(glm::ivec2 point);
+  Cutter(const Cutter&) = delete;
+  Cutter& operator=(const Cutter&) = delete;
+  Cutter(Cutter&&) = default;
+  Cutter& operator=(Cutter&&) = default;
   ~Cutter() override;
 
   bool is_breakable() override;
@@ -139,6 +167,10 @@ class Cutter : public MachineBase {
 class Laser : public MachineBase {
  public:
   Laser(glm::ivec2 point);
+  Laser(const Laser&) = delete;
+  Laser& operator=(const Laser&) = delete;
+  Laser(Laser&&) = default;
+  Laser& operator=(Laser&&) = default;
   ~Laser() override;
 
   bool is_breakable() override;
@@ -158,6 +190,10 @@ class Laser : public MachineBase {
 class Assembler : public MachineBase {
  public:
   Assembler(glm::ivec2 point);
+  Assembler(const Assembler&) = delete;
+  Assembler& operator=(const Assembler&) = delete;
+  Assembler(Assembler&&) = default;
+  Assembler& operator=(Assembler&&) = default;
   ~Assembler() override;
 
   bool is_breakable() override;
@@ -177,6 +213,10 @@ class Assembler : public MachineBase {
 class MachineManager {
  public:
   MachineManager();
+  MachineManager(const MachineManager&) = delete;
+  MachineManager& operator=(const MachineManager&) = delete;
+  MachineManager(MachineManager&&) = default;
+  MachineManager& operator=(MachineManager&&) = default;
 
   void build_spatial_idx();
 

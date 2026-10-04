@@ -1,6 +1,7 @@
 #include "machine.h"
 
 #include <optional>
+#include <utility>
 
 // PIPE
 
@@ -161,11 +162,10 @@ const MachinePort& OutputDuct::port(int port_id) const {
 }
 
 void OutputDuct::evaluate(MachineManager& mgr, EvaluateContext& ctx) {
-  auto it = ctx.m_items.find(m_item);
-  if (it == ctx.m_items.end()) {
-    ctx.m_items.insert_or_assign(m_item, m_stored_count);
+  if (ctx.m_items.contains(m_item)) {
+    ctx.m_items.at(m_item) += m_stored_count;
   } else {
-    // it->second += m_stored_count;
+    ctx.m_items.insert_or_assign(m_item, m_stored_count);
   }
   m_stored_count = 0;
 }
@@ -431,28 +431,30 @@ const std::unique_ptr<MachineBase>& MachineManager::get_machine(int machine_id) 
 }
 
 std::unique_ptr<MachineBase> MachineManager::remove_machine(int machine_id) {
-  auto&& machine_ptr = std::move(m_machines.at(machine_id));
+  auto machine_ptr = std::exchange(m_machines.at(machine_id), nullptr);
+  if (machine_ptr == nullptr) {
+    throw std::runtime_error("Pipe with id " + std::to_string(machine_id) + " does not exist.");
+  }
   build_spatial_idx();
   return machine_ptr;
 }
 
 bool MachineManager::find_machine(glm::ivec2 point, int& machine_id) const {
-  auto it = m_machine_spatial_idx.find(point);
-  if (it == m_machine_spatial_idx.end()) {
-    return false;
+  if (m_machine_spatial_idx.contains(point)) {
+    machine_id = m_machine_spatial_idx.at(point);
+    return true;
   }
-  machine_id = it->second;
-  return true;
+  return false;
 }
 
 bool MachineManager::find_machine_port(glm::ivec2 point, int& machine_id, int& port_id) const {
-  auto it = m_machine_port_spatial_idx.find(point);
-  if (it == m_machine_port_spatial_idx.end()) {
-    return false;
+  if (m_machine_port_spatial_idx.contains(point)) {
+    auto& kv = m_machine_port_spatial_idx.at(point);
+    machine_id = kv.first;
+    port_id = kv.second;
+    return true;
   }
-  machine_id = it->second.first;
-  port_id = it->second.second;
-  return true;
+  return false;
 }
 
 int MachineManager::add_pipe(Pipe pipe) {
@@ -471,21 +473,20 @@ const Pipe& MachineManager::get_pipe(int pipe_id) const {
 }
 
 Pipe MachineManager::remove_pipe(int pipe_id) {
-  auto&& pipe_ptr = std::move(m_pipes.at(pipe_id));
+  auto pipe_ptr = std::exchange(m_pipes.at(pipe_id), std::nullopt);
   if (pipe_ptr == std::nullopt) {
     throw std::runtime_error("Pipe with id " + std::to_string(pipe_id) + " does not exist.");
   }
   build_spatial_idx();
-  return *pipe_ptr;
+  return std::move(*pipe_ptr);
 }
 
 bool MachineManager::find_pipe(glm::ivec2 point, int& pipe_id) const {
-  auto it = m_pipe_spatial_idx.find(point);
-  if (it == m_pipe_spatial_idx.end()) {
-    return false;
+  if (m_pipe_spatial_idx.contains(point)) {
+    pipe_id = m_pipe_spatial_idx.at(point);
+    return true;
   }
-  pipe_id = it->second;
-  return true;
+  return false;
 }
 
 void MachineManager::evaluate(EvaluateContext& ctx) {

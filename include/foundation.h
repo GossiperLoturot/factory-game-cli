@@ -29,6 +29,10 @@ class EvaluateContext {
   std::mt19937 m_rng;
 
   EvaluateContext();
+  EvaluateContext(const EvaluateContext&) = delete;
+  EvaluateContext& operator=(const EvaluateContext&) = delete;
+  EvaluateContext(EvaluateContext&&) = default;
+  EvaluateContext& operator=(EvaluateContext&&) = default;
 };
 
 #endif  // FOUNDATION_H

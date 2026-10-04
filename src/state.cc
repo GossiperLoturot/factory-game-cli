@@ -25,7 +25,7 @@ TitleState::TitleState() {
 InGameState::InGameState() : m_machine_manager{}, m_sub_state{PlacePipeSubState{}}, m_eval_ctx{} {
 }
 
-ResultState::ResultState(EvaluateContext&& eval_ctx) : m_eval_ctx{std::move(eval_ctx)} {
+ResultState::ResultState(EvaluateContext eval_ctx) : m_eval_ctx{std::move(eval_ctx)} {
 }
 
 TerminalState::TerminalState() {
@@ -97,10 +97,12 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     int x, y;
     if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y) || draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
       m_state.emplace<InGameState>(generate_level(1));
+      return;
     }
 
     if (draw_manager.handle_input_keycode(KEYCODE_ESCAPE)) {
       m_state.emplace<TerminalState>();
+      return;
     }
   } else if (auto state = std::get_if<InGameState>(&m_state)) {  // ゲームプレイ中の状態
     draw_manager.clear();
@@ -114,16 +116,20 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     if (draw_manager.handle_input_keycode(KEYCODE_TAB)) {
       if (std::holds_alternative<PlacePipeSubState>(state->m_sub_state)) {
         state->m_sub_state.emplace<PlaceMachineSubState>(MachineKind::ELECTROLYZER);
+        return;
       } else if (std::holds_alternative<LinkPipeSubState>(state->m_sub_state)) {
         state->m_sub_state.emplace<PlaceMachineSubState>(MachineKind::ELECTROLYZER);
+        return;
       } else if (std::holds_alternative<PlaceMachineSubState>(state->m_sub_state)) {
         state->m_sub_state.emplace<PlacePipeSubState>();
+        return;
       }
     }
 
     if (draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
       if (!std::holds_alternative<EvaluateSubState>(state->m_sub_state)) {
         state->m_sub_state.emplace<EvaluateSubState>();
+        return;
       }
     }
 
@@ -131,8 +137,10 @@ void StateManager::update(DrawManagerBase& draw_manager) {
       if (!std::holds_alternative<EvaluateSubState>(state->m_sub_state)) {
         if (!std::holds_alternative<RecipeSubState>(state->m_sub_state)) {
           state->m_sub_state.emplace<RecipeSubState>();
+          return;
         } else {
           state->m_sub_state.emplace<PlacePipeSubState>();
+          return;
         }
       }
     }
@@ -150,6 +158,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         int machine_id, port_id;
         if (state->m_machine_manager.find_machine_port(point, machine_id, port_id)) {
           state->m_sub_state.emplace<LinkPipeSubState>(point, machine_id, port_id);
+          return;
         }
       }
     } else if (auto sub_state = std::get_if<LinkPipeSubState>(&state->m_sub_state)) {  // ## 生産ラインの入出力の関連付け
@@ -166,8 +175,8 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         int machine_id1, port_id1;
         if (state->m_machine_manager.find_machine_port(point1, machine_id1, port_id1)) {
           int pipe_id = state->m_machine_manager.add_pipe(Pipe{point0, machine_id0, port_id0, point1, machine_id1, port_id1});
-          auto port0 = state->m_machine_manager.get_machine(machine_id0)->port(port_id0);
-          auto port1 = state->m_machine_manager.get_machine(machine_id1)->port(port_id1);
+          auto& port0 = state->m_machine_manager.get_machine(machine_id0)->port(port_id0);
+          auto& port1 = state->m_machine_manager.get_machine(machine_id1)->port(port_id1);
           // register pipe
           port0.m_pipe_ids.push_back(pipe_id);
           port1.m_pipe_ids.push_back(pipe_id);
@@ -176,6 +185,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
           port1.m_machine_port_ids.push_back({machine_id0, port_id0});
 
           state->m_sub_state.emplace<PlacePipeSubState>();
+          return;
         }
       }
     } else if (auto sub_state = std::get_if<PlaceMachineSubState>(&state->m_sub_state)) {  // ## 生産ラインの機械の配置
@@ -224,7 +234,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         }
       }
     } else if (auto sub_state = std::get_if<EvaluateSubState>(&state->m_sub_state)) {  // ## 生産ラインの評価モード
-      std::stringstream status_stream;
+      std::stringstream status_stream{};
       status_stream << "Evaluating... : " << std::setprecision(2) << std::fixed << (sub_state->m_time_count / 60.0f) << " / 3.00";
       std::string status = status_stream.str();
 
@@ -235,6 +245,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         state->m_machine_manager.evaluate(state->m_eval_ctx);
       } else {
         m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
+        return;
       }
     } else if (auto sub_state = std::get_if<RecipeSubState>(&state->m_sub_state)) {  // ## レシピの確認
       draw_manager.draw_clear_box(20, 4, 80, 20);
@@ -272,14 +283,15 @@ void StateManager::update(DrawManagerBase& draw_manager) {
       if (draw_manager.handle_input_mouse(MOUSE_RCLICK, x, y)) {
         if (std::holds_alternative<LinkPipeSubState>(state->m_sub_state)) {
           state->m_sub_state.emplace<PlacePipeSubState>();
+          return;
         }
 
         int pipe_id;
         if (state->m_machine_manager.find_pipe(glm::ivec2{x, y}, pipe_id)) {
           Pipe pipe = state->m_machine_manager.remove_pipe(pipe_id);
 
-          auto port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
-          auto port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
+          auto& port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
+          auto& port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
           // unregister pipe
           std::erase(port0.m_pipe_ids, pipe_id);
           std::erase(port1.m_pipe_ids, pipe_id);
@@ -292,12 +304,12 @@ void StateManager::update(DrawManagerBase& draw_manager) {
         if (state->m_machine_manager.find_machine(glm::ivec2{x, y}, machine_id)) {
           int n_pipe = state->m_machine_manager.get_machine(machine_id)->port_count();
           for (int port_id = 0; port_id < n_pipe; port_id++) {
-            auto port = state->m_machine_manager.get_machine(machine_id)->port(port_id);
+            auto& port = state->m_machine_manager.get_machine(machine_id)->port(port_id);
             for (int pipe_id : port.m_pipe_ids) {
               Pipe pipe = state->m_machine_manager.remove_pipe(pipe_id);
 
-              auto port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
-              auto port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
+              auto& port0 = state->m_machine_manager.get_machine(pipe.m_begin_machine_id)->port(pipe.m_begin_port_id);
+              auto& port1 = state->m_machine_manager.get_machine(pipe.m_end_machine_id)->port(pipe.m_end_port_id);
               // unregister pipe
               std::erase(port0.m_pipe_ids, pipe_id);
               std::erase(port1.m_pipe_ids, pipe_id);
@@ -324,6 +336,7 @@ void StateManager::update(DrawManagerBase& draw_manager) {
 
     if (draw_manager.handle_input_keycode(KEYCODE_ESCAPE)) {
       m_state.emplace<ResultState>(std::move(state->m_eval_ctx));
+      return;
     }
   } else if (auto state = std::get_if<ResultState>(&m_state)) {  // 結果画面
     draw_manager.clear();
@@ -380,13 +393,16 @@ void StateManager::update(DrawManagerBase& draw_manager) {
     if (draw_manager.handle_input_mouse(MOUSE_LCLICK, x, y) || draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
       if (state->m_eval_ctx.m_stage == 1 && is_bad_inv) {
         m_state.emplace<InGameState>(generate_level(2));
+        return;
       } else {
         m_state.emplace<TerminalState>();
+        return;
       }
     }
 
     if (draw_manager.handle_input_keycode(KEYCODE_RETURN)) {
       m_state.emplace<TerminalState>();
+      return;
     }
   }
 }
