@@ -5,7 +5,14 @@
 #include <string_view>
 #include <unordered_map>
 
-enum class Item {
+enum class MachineKind : uint8_t {
+  ELECTROLYZER,
+  CUTTER,
+  LAZER,
+  ASSEMBLER,
+};
+
+enum class Item : uint8_t {
   WATER,
   HYDROGEN,
   OXYGEN,
@@ -19,10 +26,10 @@ enum class Item {
   CHIP,
 };
 
+std::string_view machine_to_string(MachineKind kind);
 std::string_view item_to_string(Item item);
 
-class EvaluateContext {
- public:
+struct EvaluateContext {
   int m_stage;
   int m_design_time;
   std::unordered_map<Item, int> m_items;

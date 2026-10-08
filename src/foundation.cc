@@ -1,5 +1,21 @@
 #include "foundation.h"
 
+std::string_view machine_to_string(MachineKind kind) {
+  switch (kind) {
+    case MachineKind::ELECTROLYZER:
+      return "Electrolyzer";
+    case MachineKind::CUTTER:
+      return "Cutter";
+    case MachineKind::LAZER:
+      return "Lazer";
+    case MachineKind::ASSEMBLER:
+      return "Assembler";
+
+    default:
+      return "Unknown";
+  }
+}
+
 std::string_view item_to_string(Item item) {
   switch (item) {
     case Item::WATER:

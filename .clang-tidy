@@ -1,4 +1,10 @@
 Checks: >
   -*,
+  clang-diagnostic-*,
+  clang-analyzer-*,
   bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  misc-*,
+  -misc-unused-parameters,
   performance-*

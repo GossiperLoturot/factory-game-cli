@@ -33,8 +33,8 @@ DrawManagerWindows::DrawManagerWindows() {
   cursor_info.bVisible = FALSE;
   SetConsoleCursorInfo(m_stdout_handle, &cursor_info);
 
-  m_current_buffer = std::vector(m_width * m_height, ' ');
-  m_back_buffer = std::vector(m_width * m_height, ' ');
+  m_current_buffer = std::vector(static_cast<size_t>(m_width * m_height), ' ');
+  m_back_buffer = std::vector(static_cast<size_t>(m_width * m_height), ' ');
 
   m_input = INPUT_RECORD();
 }
@@ -72,7 +72,7 @@ void DrawManagerWindows::draw_label(int x, int y, std::string_view text) {
 }
 
 void DrawManagerWindows::draw_label_box(int x, int y, std::string_view text) {
-  draw_line_box(x - 1, y - 1, text.length() + 2, 3);
+  draw_line_box(x - 1, y - 1, static_cast<int>(text.length()) + 2, 3);
   draw_label(x, y, text);
 }
 
@@ -210,8 +210,8 @@ DrawManagerLinux::DrawManagerLinux() {
   std::cout << "\x1b[?1006h";
   std::cout << std::flush;
 
-  m_current_buffer = std::vector(m_width * m_height, ' ');
-  m_back_buffer = std::vector(m_width * m_height, ' ');
+  m_current_buffer = std::vector(static_cast<size_t>(m_width * m_height), ' ');
+  m_back_buffer = std::vector(static_cast<size_t>(m_width * m_height), ' ');
 }
 
 DrawManagerLinux::~DrawManagerLinux() {
@@ -241,7 +241,7 @@ void DrawManagerLinux::draw_label(int x, int y, std::string_view text) {
     return;
   }
 
-  for (int i = 0; i < text.length(); ++i) {
+  for (int i = 0; i < static_cast<int>(text.length()); ++i) {
     int current_x = x + i;
     if (current_x < 0 || current_x >= m_width) {
       continue;
@@ -251,7 +251,7 @@ void DrawManagerLinux::draw_label(int x, int y, std::string_view text) {
 }
 
 void DrawManagerLinux::draw_label_box(int x, int y, std::string_view text) {
-  draw_line_box(x - 1, y - 1, text.length() + 2, 3);
+  draw_line_box(x - 1, y - 1, static_cast<int>(text.length()) + 2, 3);
   draw_label(x, y, text);
 }
 
@@ -341,7 +341,7 @@ void DrawManagerLinux::capture_input() {
   m_input_buffer.clear();
 
   char buf[32];
-  int n = read(STDIN_FILENO, buf, sizeof(buf));
+  int n = static_cast<int>(read(STDIN_FILENO, buf, sizeof(buf)));
   if (n > 0) {
     m_input_buffer.assign(buf, buf + n);
   }

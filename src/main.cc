@@ -17,8 +17,9 @@ int main() {
 
   auto state_manager = std::make_unique<StateManager>();
 
-  while (state_manager->is_running()) {
-    state_manager->update(*draw_manager);
+  auto& state_manager_ref = *state_manager;
+  while (!state_manager_ref.is_terminate()) {
+    state_manager_ref.update(*draw_manager);
   }
 
   return EXIT_SUCCESS;

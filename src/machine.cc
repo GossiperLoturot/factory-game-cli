@@ -102,7 +102,7 @@ std::vector<glm::ivec4> InputDuct::rects() const {
 }
 
 int InputDuct::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& InputDuct::port(int port_id) {
@@ -150,7 +150,7 @@ std::vector<glm::ivec4> OutputDuct::rects() const {
 }
 
 int OutputDuct::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& OutputDuct::port(int port_id) {
@@ -201,7 +201,7 @@ std::vector<glm::ivec4> Electrolyzer::rects() const {
 }
 
 int Electrolyzer::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& Electrolyzer::port(int port_id) {
@@ -266,7 +266,7 @@ std::vector<glm::ivec4> Cutter::rects() const {
 }
 
 int Cutter::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& Cutter::port(int port_id) {
@@ -337,7 +337,7 @@ std::vector<glm::ivec4> Laser::rects() const {
 }
 
 int Laser::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& Laser::port(int port_id) {
@@ -395,7 +395,7 @@ std::vector<glm::ivec4> Assembler::rects() const {
 }
 
 int Assembler::port_count() const {
-  return m_ports.size();
+  return static_cast<int>(m_ports.size());
 }
 
 MachinePort& Assembler::port(int port_id) {
@@ -443,7 +443,7 @@ void MachineManager::build_spatial_idx() {
   m_machine_port_spatial_idx.clear();
   m_pipe_spatial_idx.clear();
 
-  for (int machine_id = 0; machine_id < m_machines.size(); ++machine_id) {
+  for (int machine_id = 0; machine_id < static_cast<int>(m_machines.size()); ++machine_id) {
     const auto& machine_ptr = m_machines.at(machine_id);
     if (machine_ptr == nullptr) {
       continue;
@@ -467,7 +467,7 @@ void MachineManager::build_spatial_idx() {
     }
   }
 
-  for (int pipe_id = 0; pipe_id < m_pipes.size(); ++pipe_id) {
+  for (int pipe_id = 0; pipe_id < static_cast<int>(m_pipes.size()); ++pipe_id) {
     const auto& pipe_ptr = m_pipes.at(pipe_id);
     if (pipe_ptr == std::nullopt) {
       continue;
@@ -486,7 +486,7 @@ void MachineManager::build_spatial_idx() {
 }
 
 int MachineManager::add_machine(std::unique_ptr<MachineBase> machine) {
-  int machine_id = m_machines.size();
+  int machine_id = static_cast<int>(m_machines.size());
   m_machines.push_back(std::move(machine));
   build_spatial_idx();
   return machine_id;
@@ -524,7 +524,7 @@ bool MachineManager::find_machine_port(glm::ivec2 point, int& machine_id, int& p
 }
 
 int MachineManager::add_pipe(Pipe pipe) {
-  int id = m_pipes.size();
+  int id = static_cast<int>(m_pipes.size());
   m_pipes.push_back(std::move(pipe));
   build_spatial_idx();
   return id;
