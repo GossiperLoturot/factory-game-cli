@@ -1,2 +1,5 @@
-/build
+/out
 /.cache
+
+# visual studio
+/.vs

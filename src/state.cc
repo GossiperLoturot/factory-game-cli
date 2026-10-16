@@ -1,6 +1,7 @@
 #include "state.h"
 
 #include <iomanip>
+#include <sstream>
 #include <utility>
 #include <variant>
 

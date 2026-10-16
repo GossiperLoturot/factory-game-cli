@@ -1,4 +1,4 @@
-﻿#include <cstdlib>
+#include <cstdlib>
 #include <memory>
 
 #include "draw.h"

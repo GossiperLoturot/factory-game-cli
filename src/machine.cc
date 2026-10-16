@@ -1,6 +1,7 @@
 #include "machine.h"
 
 #include <optional>
+#include <string>
 #include <utility>
 
 // PIPE
